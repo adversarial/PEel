@@ -17,12 +17,12 @@
 #include <Windows.h>
 
 #pragma region Basic Types
-	typedef uint32_t PTR32;
-	typedef uint64_t PTR64;
-	typedef PTR32 PTR;
+    typedef uint32_t PTR32;
+    typedef uint64_t PTR64;
+    typedef PTR32 PTR;
 
 // return system (too lazy for enums)
-	typedef signed char LOGICAL;
+    typedef signed char LOGICAL;
 
 #	define LOGICAL_SUCCESS(x) (!x)
 #	define LOGICAL_FAILURE(x) (x > 0)
@@ -34,16 +34,16 @@
 #pragma endregion
 
 #pragma region Windows Proxies
-	#pragma region Types Defines
-		typedef IMAGE_DOS_HEADER		DOS_HEADER;
-		typedef IMAGE_NT_HEADERS32		NT_HEADERS32;
-		typedef IMAGE_NT_HEADERS64		NT_HEADERS64;
-		typedef IMAGE_NT_HEADERS		NT_HEADERS;
-		typedef IMAGE_SECTION_HEADER	SECTION_HEADER;
-		typedef IMAGE_EXPORT_DIRECTORY  EXPORT_DIRECTORY;
-		typedef IMAGE_BASE_RELOCATION	BASE_RELOCATION;
-		typedef IMAGE_IMPORT_DESCRIPTOR IMPORT_DESCRIPTOR;
-		typedef IMAGE_THUNK_DATA		THUNK_DATA;
-		typedef IMAGE_IMPORT_BY_NAME	IMPORT_NAME;
-	#pragma endregion
+    #pragma region Types Defines
+        typedef IMAGE_DOS_HEADER		DOS_HEADER;
+        typedef IMAGE_NT_HEADERS32		NT_HEADERS32;
+        typedef IMAGE_NT_HEADERS64		NT_HEADERS64;
+        typedef IMAGE_NT_HEADERS		NT_HEADERS;
+        typedef IMAGE_SECTION_HEADER	SECTION_HEADER;
+        typedef IMAGE_EXPORT_DIRECTORY  EXPORT_DIRECTORY;
+        typedef IMAGE_BASE_RELOCATION	BASE_RELOCATION;
+        typedef IMAGE_IMPORT_DESCRIPTOR IMPORT_DESCRIPTOR;
+        typedef IMAGE_THUNK_DATA		THUNK_DATA;
+        typedef IMAGE_IMPORT_BY_NAME	IMPORT_NAME;
+    #pragma endregion
 #pragma endregion
