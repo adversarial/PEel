@@ -18,11 +18,11 @@
 #include "peel.h"
 
 #pragma region File functions
-	LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe);
-	LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe);
 
-	LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
-	LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const PTR pImageBuffer, OUT VIRTUAL_MODULE32* vm);
+    LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
+    LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const PTR pImageBuffer, OUT VIRTUAL_MODULE32* vm);
 
-	LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe);
 #pragma endregion
