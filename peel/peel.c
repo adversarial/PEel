@@ -122,13 +122,15 @@ DWORD EXPORT LIBCALL MrPageToSectionProtection32(IN DWORD dwProtection) {
     DWORD dwChar = 0;
     if (dwProtection & 1) // PAGE_NOACCESS
         return dwChar;
-    if (dwProtection & 0x0f) // no execute permissions in first nibble
+    if (dwProtection & 0x06) // no execute permissions in first nibble
         dwChar |= IMAGE_SCN_MEM_READ;
-    else if (dwProtection & 0xf0) // execute permissions
+    else if (dwProtection & 0x70) // execute permissions
         dwChar |= IMAGE_SCN_MEM_EXECUTE;
     dwProtection = dwProtection >> 4 | dwProtection;
     if (dwProtection & 0x4)
         dwChar |= IMAGE_SCN_MEM_WRITE;
+    if (dwProtection & 0x2)
+        dwChar |= IMAGE_SCN_MEM_READ;
     // now for the code/data parts
     if (dwChar & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE))
         dwChar |= IMAGE_SCN_CNT_CODE;
