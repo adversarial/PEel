@@ -63,6 +63,7 @@
 #		endif
 #		define BUILDING_AS_X64				TRUE
 #	endif
+#   define _CRT_SECURE_NO_WARNINGS
 #pragma endregion
 
 #pragma region Private
