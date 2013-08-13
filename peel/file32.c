@@ -26,7 +26,6 @@
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe) {
-    PTR32 MaxPa;
     unsigned int i;
 
     rpe->pIDH = (DOS_HEADER*)pFileBase;
