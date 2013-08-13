@@ -39,6 +39,9 @@
     LOGICAL EXPORT LIBCALL MrMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa);
     LOGICAL EXPORT LIBCALL MrMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva);
     
+    // imports/relocations
+    LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe);
+
     // codecaving
     //LOGICAL EXPORT LIBCALL MrDiscoverCaves32(INOUT RAW_PE32* rpe);
     //LOGICAL EXPORT LIBCALL MrFreeCaves32(INOUT RAW_PE32* rpe);
