@@ -88,12 +88,26 @@ Additional notes:
         } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
 
         typedef struct {
+            char  *Function,      // ptr to function name (NULL if by ordinal)
+                  *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
+            PTR32 *dwFunctionPtr; // ptr to IAT entry
+            void  *Flink;
+        } IMPORT_ITEM32;
+
+        typedef struct {
+            char          *Library; // ptr to char* that hold library name
+            IMPORT_ITEM32 *iiImportList;
+            void          *Flink;
+        } IMPORT_LIBRARY32;
+
+        typedef struct {
             DOS_HEADER		*pIDH;
             DOS_STUB		*pIDS;
             NT_HEADERS32	*pINH;
             SECTION_HEADER **ppISH;			// array pointing to section headers
             void		   **ppSectionData;	// array pointing to section data
             CODECAVE_LIST32 *pCaveData;		// forward-linked list containing codecaves
+            IMPORT_LIBRARY32 *pIL;           // forward-linked list of imports
             PE_FLAGS		 dwFlags;
         } RAW_PE32;	// contains PE file
 

@@ -92,7 +92,7 @@ LOGICAL EXPORT LIBCALL MrGetRvaPtr32(INOUT const RAW_PE32* rpe, IN const PTR32 R
     if (Rva > rpe->pINH->OptionalHeader.SizeOfHeaders) {
         // find section
         for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-            if (Rva > rpe->ppISH[i]->VirtualAddress
+            if (Rva >= rpe->ppISH[i]->VirtualAddress
              && Rva < rpe->ppISH[i]->VirtualAddress + MrAlignUp32(rpe->ppISH[i]->Misc.VirtualSize, rpe->pINH->OptionalHeader.SectionAlignment)) {
                 Offset = (PTR)rpe->ppSectionData[i] + Rva - rpe->ppISH[i]->VirtualAddress;
                 break;
@@ -293,6 +293,69 @@ LOGICAL EXPORT LIBCALL MrMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva) {
     for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
         dwLargeAddr = rpe->ppISH[i]->VirtualAddress + MrAlignUp32(rpe->ppISH[i]->Misc.VirtualSize, rpe->pINH->OptionalHeader.SectionAlignment);
         *MaxRva = dwLargeAddr > *MaxRva ? dwLargeAddr : *MaxRva; // max(dwLargeAddr, *MaxRva) 
+    }
+    return LOGICAL_TRUE;
+}
+
+/// <summary>
+///	Loads import list into rpe->pIL </summary>
+///
+/// <param name="rpe">
+/// Loaded RAW_PE32 </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
+LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
+    IMPORT_DESCRIPTOR   *iidDesc = NULL;
+    THUNK_DATA32        *tdIat = NULL;
+    IMPORT_NAME         *inName = NULL;
+    IMPORT_LIBRARY32    *pIL = NULL;
+    IMPORT_ITEM32       *pII = NULL;
+    unsigned int i;
+    
+    // do we even have to do imports?
+    if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
+     || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
+        return LOGICAL_TRUE;
+    rpe->pIL = (IMPORT_LIBRARY32*)calloc(1, sizeof(IMPORT_LIBRARY32));
+    if (rpe->pIL == NULL)
+        return LOGICAL_MAYBE;
+    pIL = rpe->pIL;
+    iidDesc = (IMPORT_DESCRIPTOR*)((PTR)rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+    if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)iidDesc, (PTR*)&iidDesc)))
+        return LOGICAL_FALSE;
+    for (; iidDesc->Characteristics; ++iidDesc) {
+        pIL->Library = (char*)iidDesc->Name;
+        if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pIL->Library, (PTR*)&pIL->Library)))
+            return LOGICAL_FALSE;
+        tdIat = (THUNK_DATA32*)iidDesc->FirstThunk;
+        if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)tdIat, (PTR*)&tdIat)))
+            return LOGICAL_FALSE;
+        pII = (IMPORT_ITEM32*)calloc(1, sizeof(IMPORT_ITEM32));
+        if (pII == NULL)
+            return LOGICAL_MAYBE;
+        pIL->iiImportList = pII;
+        for (; tdIat->u1.Function; ++tdIat) {
+            if (tdIat->u1.Ordinal & IMAGE_ORDINAL_FLAG32)
+                pII->Ordinal = (char*)tdIat->u1.Ordinal;
+            else {
+                inName = (IMPORT_NAME*)tdIat->u1.AddressOfData;
+                if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)inName, (PTR*)&inName)))
+                    return LOGICAL_FALSE;
+                pII->Function = (char*)inName->Name;
+                if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pII->Function, (PTR*)&pII->Function)))
+                    return LOGICAL_FALSE;
+            }
+            pII->dwFunctionPtr = (PTR32*)&tdIat->u1.AddressOfData;
+            pII->Flink = calloc(1, sizeof(IMPORT_ITEM32));
+            if (pII->Flink == NULL)
+                return LOGICAL_MAYBE;
+            pII = (IMPORT_ITEM32*)pII->Flink;
+        }
+        pIL->Flink = calloc(1, sizeof(IMPORT_LIBRARY32));
+        if (pIL->Flink == NULL)
+            return LOGICAL_MAYBE;
+        pIL = (IMPORT_LIBRARY32*)pIL->Flink;
     }
     return LOGICAL_TRUE;
 }

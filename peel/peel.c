@@ -130,9 +130,11 @@ DWORD EXPORT LIBCALL MrPageToSectionProtection32(IN DWORD dwProtection) {
     if (dwProtection & 0x6)
         dwChar |= IMAGE_SCN_MEM_READ;
     // now for the code/data parts
-    if (dwChar & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE))
+    if (dwChar & IMAGE_SCN_MEM_READ 
+     && dwChar & IMAGE_SCN_MEM_EXECUTE)
         dwChar |= IMAGE_SCN_CNT_CODE;
-    if (dwChar & (IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE))
+    if (dwChar & IMAGE_SCN_MEM_READ
+     && dwChar & IMAGE_SCN_MEM_WRITE)
         dwChar |= IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_CNT_UNINITIALIZED_DATA;
     return dwChar;
 }
