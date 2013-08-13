@@ -159,7 +159,7 @@ LOGICAL EXPORT LIBCALL MrWriteRva32(INOUT RAW_PE32* rpe, IN const PTR32 Rva, IN 
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error </returns>
-LOGICAL EXPORT LIBCALL MrReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN const size_t cbBufferMax) {
+LOGICAL EXPORT LIBCALL MrReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN size_t cbBufferMax) {
     PTR ptr;
 
     if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, Rva, &ptr)))
@@ -311,7 +311,6 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
     IMPORT_NAME         *inName = NULL;
     IMPORT_LIBRARY32    *pIL = NULL;
     IMPORT_ITEM32       *pII = NULL;
-    unsigned int i;
     
     // do we even have to do imports?
     if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
@@ -343,8 +342,6 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
                 if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)inName, (PTR*)&inName)))
                     return LOGICAL_FALSE;
                 pII->Function = (char*)inName->Name;
-                if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pII->Function, (PTR*)&pII->Function)))
-                    return LOGICAL_FALSE;
             }
             pII->dwFunctionPtr = (PTR32*)&tdIat->u1.AddressOfData;
             pII->Flink = calloc(1, sizeof(IMPORT_ITEM32));
