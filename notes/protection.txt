@@ -1,0 +1,15 @@
+characteristics:
+
+WRE0 0000 0000 0000 0000 0000 UIC0 0000
+
+memory:
+
+0000 0000 0000 0000 0000 0000 0EEE 0RRN
+                               RR   W 
+                               W        
+
+WERN...
+
+E = 0x70
+R = 0x06
+W = 0x04

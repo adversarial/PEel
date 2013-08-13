@@ -34,7 +34,7 @@ LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE
     if (rpe->pIDH->e_magic != IMAGE_DOS_SIGNATURE)
         return LOGICAL_FALSE;
 #endif
-    rpe->pIDS = (DOS_STUB)((PTR)rpe->pIDH + sizeof(DOS_HEADER));
+    rpe->pIDS = (DOS_STUB*)((PTR)rpe->pIDH + sizeof(DOS_HEADER));
     rpe->pINH = (NT_HEADERS32*)((PTR)rpe->pIDH + rpe->pIDH->e_lfanew);
 #if ACCEPT_INVALID_SIGNATURES
     if (rpe->pINH->Signature != IMAGE_NT_SIGNATURE
