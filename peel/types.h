@@ -43,7 +43,7 @@
         typedef IMAGE_EXPORT_DIRECTORY  EXPORT_DIRECTORY;
         typedef IMAGE_BASE_RELOCATION	BASE_RELOCATION;
         typedef IMAGE_IMPORT_DESCRIPTOR IMPORT_DESCRIPTOR;
-        typedef IMAGE_THUNK_DATA		THUNK_DATA;
+        typedef IMAGE_THUNK_DATA32		THUNK_DATA32;
         typedef IMAGE_IMPORT_BY_NAME	IMPORT_NAME;
     #pragma endregion
 #pragma endregion
