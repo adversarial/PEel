@@ -41,6 +41,8 @@
     
     // imports/relocations
     LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrEnumerateRelocations32(INOUT RAW_PE32* rpe);
 
     // codecaving
     //LOGICAL EXPORT LIBCALL MrDiscoverCaves32(INOUT RAW_PE32* rpe);

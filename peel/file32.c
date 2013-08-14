@@ -158,7 +158,7 @@ LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const PTR pI
 /// <summary>
 ///	Frees a file that was allocated </summary>
 ///
-/// <param name="vm">
+/// <param name="rpe">
 /// Loaded RAW_PE32 struct that is not attached </param>
 ///
 /// <returns>
