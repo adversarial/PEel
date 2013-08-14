@@ -341,9 +341,9 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
                 inName = (IMPORT_NAME*)tdIat->u1.AddressOfData;
                 if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)inName, (PTR*)&inName)))
                     return LOGICAL_FALSE;
-                pII->Function = (char*)inName->Name;
+                pII->Name = (char*)inName->Name;
             }
-            pII->dwFunctionPtr = (PTR32*)&tdIat->u1.AddressOfData;
+            pII->dwItemPtr = (PTR32*)&tdIat->u1.AddressOfData;
             pII->Flink = calloc(1, sizeof(IMPORT_ITEM32));
             if (pII->Flink == NULL)
                 return LOGICAL_MAYBE;
@@ -355,6 +355,54 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
         pIL = (IMPORT_LIBRARY32*)pIL->Flink;
     }
     return LOGICAL_TRUE;
+}
+
+LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
+    EXPORT_DIRECTORY* pED = NULL;
+    EXPORT_ITEM32* pEI = NULL;
+    unsigned int i;
+
+    PTR32* ppszNames = NULL;
+    DWORD* ppdwOrdinals = NULL;
+    PTR32* ppFunctionPtrs;
+
+    // do we even have exports?
+    if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size
+     || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
+        return LOGICAL_TRUE;
+    rpe->pEI = (EXPORT_ITEM32*)calloc(1, sizeof(EXPORT_ITEM32));
+    if (rpe->pEI == NULL)
+        return LOGICAL_MAYBE;
+    pEI = rpe->pEI;
+    pED = (EXPORT_DIRECTORY*)rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+    if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pED, (PTR*)&pED)))
+        return LOGICAL_FALSE;
+    ppszNames = (PTR32*)pED->AddressOfNames;
+    if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)ppszNames, (PTR*)&ppszNames)))
+        return LOGICAL_FALSE;
+    ppdwOrdinals = (DWORD*)pED->AddressOfNameOrdinals;
+    if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)ppdwOrdinals, (PTR*)&ppdwOrdinals)))
+        return LOGICAL_FALSE;
+    ppFunctionPtrs = (PTR32*)pED->AddressOfFunctions;
+    if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)ppFunctionPtrs, (PTR*)&ppFunctionPtrs)))
+        return LOGICAL_FALSE;
+    // wierd solution but theoretically one could be bigger so we'll pick the biggest one
+    for (i = 0; i < (pED->NumberOfFunctions > pED->NumberOfNames ? pED->NumberOfFunctions : pED->NumberOfNames); ++i) {
+        pEI->Name = (char*)*ppszNames++;
+        MrGetRvaPtr32(rpe, (PTR32)pEI->Name, (PTR*)&pEI->Name);
+        pEI->Ordinal = (char*)*ppdwOrdinals++;
+        MrGetRvaPtr32(rpe, (PTR32)pEI->Ordinal, (PTR*)&pEI->Ordinal);
+        pEI->dwItemPtr = (PTR32*)ppFunctionPtrs++;
+        pEI->Flink = calloc(1, sizeof(EXPORT_ITEM32));
+        if (pEI->Flink == NULL)
+            return LOGICAL_MAYBE;
+        pEI = (EXPORT_ITEM32*)pEI->Flink;
+    }
+    return LOGICAL_TRUE;
+}
+
+LOGICAL EXPORT LIBCALL MrEnumerateRelocations32(INOUT RAW_PE32* rpe) {
+
 }
 
 //// needs fixing errywhere (error checks)

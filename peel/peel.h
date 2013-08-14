@@ -88,9 +88,9 @@ Additional notes:
         } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
 
         typedef struct {
-            char  *Function,      // ptr to function name (NULL if by ordinal)
+            char  *Name,          // ptr to function name (NULL if by ordinal)
                   *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
-            PTR32 *dwFunctionPtr; // ptr to IAT entry
+            PTR32 *dwItemPtr; // ptr to IAT entry
             void  *Flink;
         } IMPORT_ITEM32;
 
@@ -101,14 +101,22 @@ Additional notes:
         } IMPORT_LIBRARY32;
 
         typedef struct {
-            DOS_HEADER		*pIDH;
-            DOS_STUB		*pIDS;
-            NT_HEADERS32	*pINH;
-            SECTION_HEADER **ppISH;			// array pointing to section headers
-            void		   **ppSectionData;	// array pointing to section data
-            CODECAVE_LIST32 *pCaveData;		// forward-linked list containing codecaves
-            IMPORT_LIBRARY32 *pIL;           // forward-linked list of imports
-            PE_FLAGS		 dwFlags;
+            char  *Name,
+                  *Ordinal;
+            PTR32 *dwItemPtr;
+            void  *Flink;
+        } EXPORT_ITEM32;
+
+        typedef struct {
+            DOS_HEADER		 *pIDH;
+            DOS_STUB 		 *pIDS;
+            NT_HEADERS32 	 *pINH;
+            SECTION_HEADER  **ppISH;		    // array pointing to section headers
+            void		    **ppSectionData;    // array pointing to section data
+            CODECAVE_LIST32  *pCaveData;	    // forward-linked list containing codecaves
+            IMPORT_LIBRARY32 *pIL;              // forward-linked list of imports
+            EXPORT_ITEM32    *pEI;              // forward linked list of exports
+            PE_FLAGS		  dwFlags;
         } RAW_PE32;	// contains PE file
 
         typedef struct {
