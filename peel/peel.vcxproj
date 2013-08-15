@@ -14,13 +14,13 @@
     <ClInclude Include="file32.h" />
     <ClInclude Include="peel.h" />
     <ClInclude Include="preproc.h" />
+    <ClInclude Include="raw.h" />
     <ClInclude Include="raw32.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="virtual32.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="file32.c" />
-    <ClCompile Include="main.c" />
     <ClCompile Include="peel.c" />
     <ClCompile Include="raw32.c" />
     <ClCompile Include="virtual32.c" />
@@ -32,7 +32,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -71,10 +71,15 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <Optimization>MinSpace</Optimization>
+      <FunctionLevelLinking>false</FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <CreateHotpatchableImage>true</CreateHotpatchableImage>
+      <AssemblerOutput>AssemblyCode</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
