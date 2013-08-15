@@ -33,6 +33,9 @@
     <ClInclude Include="file32.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="raw.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="peel.c">
@@ -40,9 +43,6 @@
     </ClCompile>
     <ClCompile Include="virtual32.c">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="main.c">
-      <Filter>Resource Files</Filter>
     </ClCompile>
     <ClCompile Include="raw32.c">
       <Filter>Source Files</Filter>
