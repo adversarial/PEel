@@ -18,6 +18,9 @@
 #include "preproc.h"
 #include "types.h"
 
+//#pragma comment(linker, "/NODEFAULTLIB")
+//#pragma comment(linker, "LIBCTINY")
+
 /* 
    PEel: PE editing library
   
@@ -58,8 +61,6 @@ Additional notes:
             low level functions that control individual aspects or generally useful snips
         HlpXxx -
             high level functions to abstract loading
-        mrXxx  -
-            alternative c library (libctiny is currently being used, however)
 */
 
 #pragma region Structs
@@ -70,8 +71,8 @@ Additional notes:
             char dsMsg[0x2a];	// variable size, 2a is default msvc, '$' terminated
         } DOS_STUB;
         
-        typedef struct {
-            uint32_t Relocated : 1,	// relocations are resolved
+        typedef struct { // ptr size for alignment, can be adjusted if necessary
+            PTR     Relocated : 1,	// relocations are resolved
                     Imported  : 1,	// imports are resolved
                     Protected : 1,	// image has proper protection
                     Attached  : 1;	// points to an externally allocated image
@@ -105,7 +106,20 @@ Additional notes:
                   *Ordinal;
             PTR32 *dwItemPtr;
             void  *Flink;
-        } EXPORT_ITEM32;
+        } EXPORT_LIST32;
+
+        typedef struct {
+            char  *Name;
+            PTR    wId; // only use lower WORD
+            PTR32 *dwDataPtr;
+            void  *Flink;
+        } RESOURCE_ITEM32;
+
+        typedef struct {
+            DWORD  dwType;
+            RESOURCE_ITEM32 *riResourceList; // ptr to forward-linked list of resources of dwType
+            void  *Flink;                    // points to RESOURCE_LIST32 of next type
+        } RESOURCE_LIST32;
 
         typedef struct {
             DOS_HEADER		 *pIDH;
@@ -113,10 +127,13 @@ Additional notes:
             NT_HEADERS32 	 *pINH;
             SECTION_HEADER  **ppISH;		    // array pointing to section headers
             void		    **ppSectionData;    // array pointing to section data
+            PE_FLAGS		  dwFlags;
+// essentials (pointers only)
+// the following allocate memory and, however are only used when their respective functions are called
             CODECAVE_LIST32  *pCaveData;	    // forward-linked list containing codecaves
             IMPORT_LIBRARY32 *pIL;              // forward-linked list of imports
-            EXPORT_ITEM32    *pEI;              // forward linked list of exports
-            PE_FLAGS		  dwFlags;
+            EXPORT_LIST32    *pEI;              // forward-linked list of exports
+            RESOURCE_LIST32  *pRI;              // forward-linked list of resources
         } RAW_PE32;	// contains PE file
 
         typedef struct {

@@ -1,0 +1,102 @@
+this is a c+p of readme.rtf. Please use readme.rtf for a properly formatted version.
+
+PEel
+a PE editing library
+by x8esix
+
+Project Home:
+
+http://github.com/x8esix/PEel/
+
+Background:
+
+Lack of a decent library to manipulate and view PE and PE32+ files in both file and virtual alignment, as was needed for multiple projects I was working on, created the need for this library. At the moment, it currently provides support to manipulate most values easily and provides an interface to manipulate PE sections and alignments. Higher level functions that handle alignment automatically and allow for adjustment of sections and imports/exports will be added.
+
+Notes:
+
+To use, include PEel_public.h in your project and link to PEel.lib.
+
+Changelist:
+
+    0.1: Initial release, supports:
+	Import enumerating
+	Export enumerating
+	Resource enumerating
+	Relocating
+	Checksumming
+	Image/File aligned attachments
+	Conversions between alignments
+	Multiple helper functions for conversions and general data gathering
+
+TODO:
+
+(in no particular order of priorities)	
+	.NET
+	Debug symbols
+	TLS
+
+FAQ:
+
+No one’s asked me anything, so I’ll go over some basic usage:
+
+Why is there no PEel_public.h file in the repository?
+	It's being finished, and would be useless as I am constantly updating structures until version 1.0.
+
+Error checking?
+	Only on RAW_PE/VIRTUAL_MODULE structs passed to editing/deallocating functions. None is done on PE related fields, short of header signature checks if the build option is enabled. You should set your own SEH handlers up in case your PE is invalid and does happen to have a null pointer in a referenced field. 
+
+Speaking of error checking, why so many errors?
+	I can count the number of tests I’ve done on my fingers. If you’d like to fix this problem, feel free to send a push to github or send me a message.
+
+x64 support?
+	It's coming, will be done by version 1.0. Why would you even use a x64 executable anyways, it's not like you're doing 128 bit math or hooking kernel processes.
+
+MrGetRvaPtr? Why is this scattered throughout the code, and why are you only checking the returns on half the calls?
+	To allow you to use either a file, image, or custom aligned portion in any function requiring a RAW_PE. Any pointers that are filled into the RAW_PE struct but not referenced internally are not checked, seeing as an invalid field would then exit the function.
+
+        __________________________________________________________________________
+
+Glossary:
+
+Codecave	- Empty area usually due to padding and alignment, typically filled with 0s
+EAT		- Export Address Table
+IAT		- Import Address Table
+IDH		- IMAGE_DOS_HEADER
+IDS		- IMAGE_DOS_STUB
+INH		- IMAGE_NT_HEADERS
+ISH		- IMAGE_SECTION_HEADER
+Pa		- physical address or file offset
+Rva		- virtual address relative to module base
+Va		- virtual address
+
+Structs:
+
+RAW_PE:
+Wraps a PE file and provides pointers to common structures for easy access. Alignment does not matter on any function with a RAW_PE parameter. 
+
+// However anything involving headers or gaps in padding outside of sections will 
+// produce errors if you have the data structures heap allocated or otherwise 
+// randomly sprawled about.
+
+typedef struct {
+	DOS_HEADER	  *pIDH;
+       DOS_STUB	  *pIDS;
+       NT_HEADERS	  *pINH;
+       SECTION_HEADER **ppISH;
+       void	        **ppSectionData;
+       CODECAVE_LIST   *pCaveData;
+       IMPORT_LIBRARY  *pIL;
+       PE_FLAGS         dwFlags;
+} RAW_PE;
+
+VIRTUAL_MODULE:
+Wraps a loaded image in a RAW_PE and provides a linked list of loaded modules. cName holds a module name that is usable as an identifier, and is used in HlpXxx functions that search the VIRTUAL_MODULE list, such as loading.
+
+typedef struct {
+RAW_PE32	 PE;
+void	   	*Flink,
+*Blink;
+char		 cName[8];
+void*		 pBaseAddr;
+} VIRTUAL_MODULE32;
+

@@ -123,21 +123,21 @@ LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const PTR pImageBuffer, OUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT RAW_PE32* rpe) {
     PTR32 MaxPa;
     unsigned int i;
     
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(MrMaxPa32(&vm->PE, &MaxPa)))
         return LOGICAL_FALSE;
-    memset((void*)pImageBuffer, 0, MaxPa);
+    memset((void*)pBuffer, 0, MaxPa);
     
-    rpe->pIDH = (DOS_HEADER*)pImageBuffer;
-    memcpy(rpe->pIDH, vm->PE.pIDH, sizeof(DOS_HEADER));
+    rpe->pIDH = (DOS_HEADER*)pBuffer;
+    memmove(rpe->pIDH, vm->PE.pIDH, sizeof(DOS_HEADER));
     rpe->pIDS = (DOS_STUB*)((PTR)rpe->pIDH + sizeof(DOS_HEADER));
-    memcpy(rpe->pIDS, vm->PE.pIDS, rpe->pIDH->e_lfanew - sizeof(DOS_HEADER));
+    memmove(rpe->pIDS, vm->PE.pIDS, rpe->pIDH->e_lfanew - sizeof(DOS_HEADER));
     rpe->pINH = (NT_HEADERS32*)((PTR)rpe->pIDH + rpe->pIDH->e_lfanew);
-    memcpy(rpe->pINH, vm->PE.pINH, sizeof(NT_HEADERS32));
+    memmove(rpe->pINH, vm->PE.pINH, sizeof(NT_HEADERS32));
     if (rpe->pINH->FileHeader.NumberOfSections) {
         rpe->ppISH = (SECTION_HEADER**)malloc(rpe->pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
         if (rpe->ppISH == NULL)
@@ -147,9 +147,9 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
             return LOGICAL_MAYBE;
         for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
             rpe->ppISH[i] = (SECTION_HEADER*)((PTR)&rpe->pINH->OptionalHeader + rpe->pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            memcpy(rpe->ppISH[i], vm->PE.ppISH[i], sizeof(SECTION_HEADER));
+            memmove(rpe->ppISH[i], vm->PE.ppISH[i], sizeof(SECTION_HEADER));
             rpe->ppSectionData[i] = (void*)((PTR)rpe->pIDH + rpe->ppISH[i]->PointerToRawData);
-            memcpy(rpe->ppSectionData[i], vm->PE.ppSectionData[i], rpe->ppISH[i]->SizeOfRawData);
+            memmove(rpe->ppSectionData[i], vm->PE.ppSectionData[i], rpe->ppISH[i]->SizeOfRawData);
         }
     } else {
         rpe->ppISH = NULL;
@@ -158,6 +158,84 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
     memset(&rpe->dwFlags, 0, sizeof(rpe->dwFlags));
     rpe->dwFlags = vm->PE.dwFlags;
     rpe->dwFlags.Attached = FALSE;
+    return LOGICAL_TRUE;
+}
+
+/// <summary>
+///	Copies an image and fills in cvm with new information, also linked list is
+/// adjusted and copied module is inserted after original </summary>
+///
+/// <param name="rpe">
+/// Pointer to VIRTUAL_MODULE32 containing image </param>
+/// <param name="crpe">
+/// Pointer to VIRTUAL_MODULE32 that will recieve copy info </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
+LOGICAL EXPORT LIBCALL MrCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE32* cvm) {
+    PTR32 MaxPa;
+    void* pCopy = NULL;
+
+    if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
+        return LOGICAL_FALSE;
+    pCopy = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    if (pCopy == NULL)
+        return LOGICAL_MAYBE;
+    return MrCopyImage32Ex(vm, (void*)pCopy, cvm);
+}
+
+/// <summary>
+///	Copies an image into provided buffer and fills in cvm with new information, also linked list is
+/// adjusted and copied module is inserted after original </summary>
+///
+/// <param name="rpe">
+/// Pointer to VIRTUAL_MODULE32 containing image </param>
+/// <param name="pBuffer">
+/// Pointer to a buffer of at least MrMaxRva32(rpe,) bytes with at least PAGE_READWRITE access
+/// <param name="crpe">
+/// Pointer to VIRTUAL_MODULE32 that will recieve copy info </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
+LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE32* cvm) {
+    PTR32 MaxPa = 0;
+    unsigned int i;
+
+    // unnecessary per standard, but let's play nice with gaps
+    if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
+        return LOGICAL_FALSE;
+    memset((void*)pBuffer, 0, MaxPa);
+
+    cvm->pBaseAddr = (void*)pBuffer;
+    cvm->PE.pIDH = (DOS_HEADER*)cvm->pBaseAddr;
+    memmove(cvm->PE.pIDH, vm->pBaseAddr, sizeof(DOS_HEADER));
+    cvm->PE.pIDS = (DOS_STUB*)((PTR)cvm->pBaseAddr + sizeof(DOS_HEADER));
+    memmove(cvm->PE.pIDS, vm->PE.pIDS, (PTR)cvm->PE.pIDH->e_lfanew - sizeof(DOS_HEADER));
+    cvm->PE.pINH = (NT_HEADERS32*)((PTR)cvm->pBaseAddr + cvm->PE.pIDH->e_lfanew);
+    memmove(cvm->PE.pINH, vm->PE.pINH, sizeof(NT_HEADERS32));
+    if (cvm->PE.pINH->FileHeader.NumberOfSections) {
+        cvm->PE.ppISH = (SECTION_HEADER**)malloc(cvm->PE.pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (cvm->PE.ppISH == NULL)
+            return LOGICAL_MAYBE;
+        cvm->PE.ppSectionData = (void**)malloc(cvm->PE.pINH->FileHeader.NumberOfSections * sizeof(void*));
+        if (cvm->PE.ppSectionData == NULL)
+            return LOGICAL_MAYBE;
+        for (i = 0; i < cvm->PE.pINH->FileHeader.NumberOfSections; ++i) {
+            cvm->PE.ppISH[i] = (SECTION_HEADER*)((PTR)&cvm->PE.pINH->OptionalHeader + cvm->PE.pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            memmove(cvm->PE.ppISH[i], vm->PE.ppISH[i], sizeof(SECTION_HEADER));
+            cvm->PE.ppSectionData[i] = (void*)((PTR)cvm->pBaseAddr + cvm->PE.ppISH[i]->VirtualAddress);
+            memmove(cvm->PE.ppSectionData[i], vm->PE.ppSectionData[i], cvm->PE.ppISH[i]->Misc.VirtualSize);
+        }
+    } else {
+        cvm->PE.ppISH = NULL;
+        cvm->PE.ppSectionData = NULL;
+    }
+    memset(&cvm->PE.dwFlags, 0, sizeof(PE_FLAGS));
+    cvm->PE.dwFlags = vm->PE.dwFlags;
+    cvm->PE.dwFlags.Attached = FALSE;
+    cvm->Blink = (void*)vm;
+    cvm->Flink = vm->Flink;
+    vm->Flink = (void*)cvm;
     return LOGICAL_TRUE;
 }
 

@@ -314,7 +314,7 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
     
     // do we even have to do imports?
     if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
-     || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
+     && !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
         return LOGICAL_TRUE;
     rpe->pIL = (IMPORT_LIBRARY32*)calloc(1, sizeof(IMPORT_LIBRARY32));
     if (rpe->pIL == NULL)
@@ -357,9 +357,17 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
     return LOGICAL_TRUE;
 }
 
+/// <summary>
+///	Loads export list into rpe->pEI </summary>
+///
+/// <param name="rpe">
+/// Loaded RAW_PE32 </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
 LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
     EXPORT_DIRECTORY* pED = NULL;
-    EXPORT_ITEM32* pEI = NULL;
+    EXPORT_LIST32* pEI = NULL;
     unsigned int i;
 
     PTR32* ppszNames = NULL;
@@ -368,9 +376,9 @@ LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
 
     // do we even have exports?
     if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size
-     || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
+     && !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
         return LOGICAL_TRUE;
-    rpe->pEI = (EXPORT_ITEM32*)calloc(1, sizeof(EXPORT_ITEM32));
+    rpe->pEI = (EXPORT_LIST32*)calloc(1, sizeof(EXPORT_LIST32));
     if (rpe->pEI == NULL)
         return LOGICAL_MAYBE;
     pEI = rpe->pEI;
@@ -393,15 +401,23 @@ LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
         pEI->Ordinal = (char*)*ppdwOrdinals++;
         MrGetRvaPtr32(rpe, (PTR32)pEI->Ordinal, (PTR*)&pEI->Ordinal);
         pEI->dwItemPtr = (PTR32*)ppFunctionPtrs++;
-        pEI->Flink = calloc(1, sizeof(EXPORT_ITEM32));
+        pEI->Flink = calloc(1, sizeof(EXPORT_LIST32));
         if (pEI->Flink == NULL)
             return LOGICAL_MAYBE;
-        pEI = (EXPORT_ITEM32*)pEI->Flink;
+        pEI = (EXPORT_LIST32*)pEI->Flink;
     }
     return LOGICAL_TRUE;
 }
 
-LOGICAL EXPORT LIBCALL MrEnumerateRelocations32(INOUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL MrEnumerateResources32(INOUT RAW_PE32* rpe) {
+    RESOURCE_DIRECTORY *pRD;
+
+
+    // check for resources
+    if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].Size
+     && !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_RESOURCE].VirtualAddress)
+        return LOGICAL_TRUE;
+
 
 }
 
