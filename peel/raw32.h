@@ -23,7 +23,8 @@
     LOGICAL EXPORT LIBCALL MrPaToRva32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR32* Rva);
 
     // editing (using RVA because it's the most common I use and easy to convert once loaded)
-    LOGICAL EXPORT LIBCALL MrGetRvaPtr32(INOUT const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR* Ptr);
+    LOGICAL EXPORT LIBCALL MrGetRvaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR* Ptr);
+    LOGICAL EXPORT LIBCALL MrGetPaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR* Ptr);
 
     LOGICAL EXPORT LIBCALL MrWriteRva32(INOUT RAW_PE32* rpe, IN const PTR32 Rva, IN const void* pData, IN size_t cbData);
     LOGICAL EXPORT LIBCALL MrReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN size_t cbBufferMax);
@@ -39,13 +40,14 @@
     LOGICAL EXPORT LIBCALL MrMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa);
     LOGICAL EXPORT LIBCALL MrMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva);
     
-    // imports/relocations
+    // imports/exports
     LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe);
-    LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe);
-    LOGICAL EXPORT LIBCALL MrEnumerateResources32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrFreeEnumeratedImports32(INOUT RAW_PE32* rpe);
 
-    // codecaving
-    //LOGICAL EXPORT LIBCALL MrDiscoverCaves32(INOUT RAW_PE32* rpe);
-    //LOGICAL EXPORT LIBCALL MrFreeCaves32(INOUT RAW_PE32* rpe);
-    //LOGICAL EXPORT LIBCALL MrShedCaves32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL MrFreeEnumeratedExports32(INOUT RAW_PE32* rpe);
+
+//    LOGICAL EXPORT LIBCALL MrEnumerateResources32(INOUT RAW_PE32* rpe);
+
+    LOGICAL EXPORT LIBCALL MrRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBase, IN const PTR32 dwNewBase);
 #pragma endregion
