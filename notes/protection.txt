@@ -8,8 +8,7 @@ memory:
                                RR   W 
                                W        
 
-WERN...
-
-E = 0x70
-R = 0x66
-W = 0x44
+in memory:
+E & 0x70
+R & 0x66
+W & 0x44

@@ -69,6 +69,39 @@ PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignme
 }
 
 /// <summary>
+///	Calculates aligned virtual size </summary>
+///
+/// <param name="offset">
+/// Address to align </param>
+/// <param name="alignment">
+/// Align up to </param>
+///
+/// <returns>
+/// Rounded value </returns>
+PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment) {
+    if (!alignment)
+        return offset;
+    return (offset + alignment - 1) & -(alignment);
+}
+
+/// <summary>
+///	Calculates aligned virtual size </summary>
+///
+/// <param name="offset">
+/// Address to align </param>
+/// <param name="alignment">
+/// Align down to </param>
+///
+/// <returns>
+/// Rounded value </returns>
+PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignment) {
+    if (!alignment)
+        return offset;
+    return (offset & -(alignment));
+}
+
+
+/// <summary>
 ///	Converts section protection in SECTION_HEADER::Characteristics to page protection </summary>
 ///
 /// <param name="dwCharacteristics">
@@ -76,7 +109,7 @@ PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignme
 ///
 /// <returns>
 /// Page protection for use with VirtualProtect </returns>
-DWORD EXPORT LIBCALL MrSectionToPageProtection32(IN const DWORD dwCharacteristics) {
+DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics) {
     DWORD dwProtect = dwCharacteristics;
     
     if (dwProtect & IMAGE_SCN_CNT_CODE)
@@ -107,6 +140,8 @@ DWORD EXPORT LIBCALL MrSectionToPageProtection32(IN const DWORD dwCharacteristic
             dwProtect = PAGE_NOACCESS;
             break;
     }
+    if (dwCharacteristics & IMAGE_SCN_MEM_NOT_CACHED)
+        dwProtect |= PAGE_NOCACHE;
     return dwProtect;
 }
 
@@ -118,10 +153,12 @@ DWORD EXPORT LIBCALL MrSectionToPageProtection32(IN const DWORD dwCharacteristic
 ///
 /// <returns>
 /// Characteristics for use in section header </returns>
-DWORD EXPORT LIBCALL MrPageToSectionProtection32(IN DWORD dwProtection) {
+DWORD EXPORT LIBCALL MrPageToSectionProtection(IN DWORD dwProtection) {
     DWORD dwChar = 0;
-    if (dwProtection & 1) // PAGE_NOACCESS
+    if (dwProtection & PAGE_NOACCESS) // PAGE_NOACCESS
         return dwChar;
+    if (dwProtection & PAGE_NOCACHE)
+        dwChar |= IMAGE_SCN_MEM_NOT_CACHED;
     if (dwProtection & 0x70) // execute permissions
         dwChar |= IMAGE_SCN_MEM_EXECUTE;
     if (dwProtection & 0x44)

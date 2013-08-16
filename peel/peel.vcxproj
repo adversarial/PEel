@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="file32.h" />
+    <ClInclude Include="hlp.h" />
     <ClInclude Include="peel.h" />
     <ClInclude Include="preproc.h" />
     <ClInclude Include="raw.h" />
@@ -21,6 +22,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="file32.c" />
+    <ClCompile Include="hlp.c" />
     <ClCompile Include="peel.c" />
     <ClCompile Include="raw32.c" />
     <ClCompile Include="virtual32.c" />
