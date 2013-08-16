@@ -23,7 +23,7 @@
 
     LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
     LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm);
-
+    
     LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
     LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
 

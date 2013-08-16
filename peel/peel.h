@@ -38,9 +38,12 @@ X = done
 * = partially done/in progress
 
     What we care about:
+    [ ] x64 support ( lol )
     [X]	Loading a PE file
-    [*] Imports/Exports ( simply needs to be integrated into new RAW_PE format... todo )
-    [*] Relocations ( simply needs to be integrated into new RAW_PE format... todo )
+    [X] Imports/Exports ( simply needs to be integrated into new RAW_PE format... todo )
+    [ ] Resources ( 0xffffffffffffffffUL)
+    [X] Relocations ( simply needs to be integrated into new RAW_PE format... todo )
+    [ ] TLS ( lack of documentation requires RE )
     [X] Add logging for debugging... ( why wasn't this done before? bp are annoying ) [ 8/2/13 ]
 
     What we don't care about:
@@ -50,10 +53,10 @@ X = done
             That's a seperate project ;)
 
     TODO:
-    [ ] Update public header
-    [ ] Fix crashes on files with 0 sections
+    [*] Update public header
+    [X] Fix crashes on files with 0 sections
     [ ] Safety dance!
-    [ ] Documentation! ( is a bitch )
+    [*] Documentation! ( is a bitch )
 
 Additional notes:
     Function namespace styling:
@@ -89,17 +92,40 @@ Additional notes:
         } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
 
         typedef struct {
+            PTR64	Offset,		// physical offset
+                    Rva,		// none of these fields need to be PTR64 but okay
+                    Size,		// cb of file cave (can be 0)
+                    VirtualSize;// cb of image cave (can be 0)
+            DWORD	Attributes;	// Page protection
+            void   *Data,
+                   *Flink;
+        } CODECAVE_LIST64;	// stores data that was in padding/outside of sections
+
+        typedef struct {
             char  *Name,          // ptr to function name (NULL if by ordinal)
                   *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
-            PTR32 *dwItemPtr; // ptr to IAT entry
+            PTR32 *dwItemPtr;     // ptr to IAT entry
             void  *Flink;
         } IMPORT_ITEM32;
+
+        typedef struct {
+            char  *Name,          // ptr to function name (NULL if by ordinal)
+                  *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
+            PTR64 *dwItemPtr;     // ptr to IAT entry
+            void  *Flink;
+        } IMPORT_ITEM64;
 
         typedef struct {
             char          *Library; // ptr to char* that hold library name
             IMPORT_ITEM32 *iiImportList;
             void          *Flink;
         } IMPORT_LIBRARY32;
+
+        typedef struct {
+            char          *Library; // ptr to char* that hold library name
+            IMPORT_ITEM64 *iiImportList;
+            void          *Flink;
+        } IMPORT_LIBRARY64;
 
         typedef struct {
             char  *Name,
@@ -109,17 +135,27 @@ Additional notes:
         } EXPORT_LIST32;
 
         typedef struct {
-            char  *Name;
-            PTR    wId; // only use lower WORD
-            PTR32 *dwDataPtr;
+            char  *Name,
+                  *Ordinal;
+            PTR64 *dwItemPtr;
             void  *Flink;
-        } RESOURCE_ITEM32;
+        } EXPORT_LIST64;
 
         typedef struct {
-            DWORD  dwType;
-            RESOURCE_ITEM32 *riResourceList; // ptr to forward-linked list of resources of dwType
-            void  *Flink;                    // points to RESOURCE_LIST32 of next type
+            PTR    dwType;
+            char  *Name;
+            PTR    wId; // only use lower WORD
+            size_t cbSize;
+            void  *pData,
+                  *Flink;
         } RESOURCE_LIST32;
+
+        typedef struct {
+            char  *Name;
+            PTR    wId; // only use lower WORD
+            void  *pData,
+                  *Flink;
+        } RESOURCE_LIST64;
 
         typedef struct {
             DOS_HEADER		 *pIDH;
@@ -132,12 +168,27 @@ Additional notes:
 // the following allocate memory and, however are only used when their respective functions are called
             CODECAVE_LIST32  *pCaveData;	    // forward-linked list containing codecaves
             IMPORT_LIBRARY32 *pIL;              // forward-linked list of imports
-            EXPORT_LIST32    *pEI;              // forward-linked list of exports
-            RESOURCE_LIST32  *pRI;              // forward-linked list of resources
+            EXPORT_LIST32    *pEL;              // forward-linked list of exports
+            RESOURCE_LIST32  *pRL;              // forward-linked list of resources
         } RAW_PE32;	// contains PE file
 
         typedef struct {
-            RAW_PE32	PE;
+            DOS_HEADER		 *pIDH;
+            DOS_STUB 		 *pIDS;
+            NT_HEADERS64 	 *pINH;
+            SECTION_HEADER  **ppISH;		    // array pointing to section headers
+            void		    **ppSectionData;    // array pointing to section data
+            PE_FLAGS		  dwFlags;
+// essentials (pointers only)
+// the following allocate memory and, however are only used when their respective functions are called
+            CODECAVE_LIST64  *pCaveData;	    // forward-linked list containing codecaves
+            IMPORT_LIBRARY64 *pIL;              // forward-linked list of imports
+            EXPORT_LIST64    *pEL;              // forward-linked list of exports
+            RESOURCE_LIST64  *pRI;              // forward-linked list of resources
+        } RAW_PE64;	// contains PE file
+
+        typedef struct {
+            RAW_PE32    PE;
             void	   *Flink,
                        *Blink;
             char		cName[8];	// identification of loaded DLLS, not sz
@@ -145,10 +196,18 @@ Additional notes:
         } VIRTUAL_MODULE32;	// wrapper to represent aligned PE
 
         typedef struct {
+            RAW_PE64    PE;
+            void	   *Flink,
+                       *Blink;
+            char		cName[8];	// identification of loaded DLLS, not sz
+            void*		pBaseAddr;	// if headers aren't loaded
+        } VIRTUAL_MODULE64;	// wrapper to represent aligned PE
+
+        typedef struct {
            uint16_t Offset	: 12,
                     Type	: 4;
         } RELOC_ITEM;
-#		pragma pack(pop)
+#	pragma pack(pop)
 #pragma endregion
 
 #pragma region Debugging
@@ -167,8 +226,11 @@ Additional notes:
     PTR32 EXPORT LIBCALL MrAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
     PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
     
-    DWORD EXPORT LIBCALL MrSectionToPageProtection32(IN const DWORD dwCharacteristics);
-    DWORD EXPORT LIBCALL MrPageToSectionProtection32(IN DWORD dwProtection);
+    PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
+    PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
+
+    DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics);
+    DWORD EXPORT LIBCALL MrPageToSectionProtection(IN DWORD dwProtection);
 #pragma endregion
 
 #pragma region Macros

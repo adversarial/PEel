@@ -108,7 +108,7 @@ LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE
     pImage = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pImage == NULL)
         return LOGICAL_MAYBE;
-    return MrImageToFile32Ex(vm, (PTR)pImage, rpe);
+    return MrImageToFile32Ex(vm, pImage, rpe);
 }
 
 /// <summary>
