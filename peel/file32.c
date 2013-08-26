@@ -228,6 +228,65 @@ LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBu
 }
 
 /// <summary>
+///	Calculates PE header checksum for file </summary>
+///
+/// <param name="vpe">
+/// Pointer to RAW_PE32 containing loaded file </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, 
+/// LOGICAL_MAYBE on CRT/memory error </returns>
+LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(IN const RAW_PE32* rpe, OUT DWORD* dwChecksum) {
+    PTR32 dwMaxPa = 0;
+    LOGICAL lResult;
+    USHORT* pCurrBlock = NULL;
+    DWORD dwProt,
+          dwOldChecksum,
+          dwCalcsum;
+    unsigned int i;
+
+    lResult = MrMaxPa32(rpe, &dwMaxPa);
+    if (!LOGICAL_SUCCESS(lResult))
+        return lResult;
+    // some wierd shit in ntdll.RtlImageNtHeaderEx to get NT_HEADERS*
+    // arg3 ends up being &NT_HEADERS.Signature
+        if (rpe->pIDH != NULL || rpe->pIDH == INVALID_HANDLE_VALUE || dwMaxPa != 0) {
+            *dwChecksum = 0;
+        // RtlImageNtHeadersEx(?, Base, Size, Out)
+            if (rpe->pIDH->e_magic != IMAGE_DOS_SIGNATURE || (PTR32)rpe->pIDH->e_lfanew > dwMaxPa)
+                return LOGICAL_FALSE;
+            if (rpe->pINH == NULL || rpe->pINH == INVALID_HANDLE_VALUE || rpe->pINH->FileHeader.SizeOfOptionalHeader == 0) {
+                return LOGICAL_FALSE;
+            }
+        // and now I'm bored of literally translating.
+        // welp here's the "optimized" version
+            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), PAGE_READWRITE, &dwProt))
+                return LOGICAL_FALSE;
+            dwOldChecksum = rpe->pINH->OptionalHeader.CheckSum;
+            rpe->pINH->OptionalHeader.CheckSum = 0;
+            
+        // micro$hit had some fancy optimi-say-shuns [southern accent here]
+        // well fuck that, maybe -O2 will help
+            pCurrBlock = (USHORT*)rpe->pIDH;
+            for (i = 0; i < dwMaxPa / sizeof(USHORT); ++i) {
+                *dwChecksum = *(USHORT*)pCurrBlock++ + *dwChecksum;
+                *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> 16);
+            }
+            *dwChecksum = (*dwChecksum & 0xffff) + (*dwChecksum >> 16);
+            if (dwMaxPa & 1) // for the idiots who use 1byte FileAlignment
+                *dwChecksum += (USHORT)*((char*)rpe->pIDH + dwMaxPa - 1);
+            *dwChecksum += dwMaxPa; // this took like 10 minutes to figure out what I was missing
+            dmsg("PE at %08lx has checksum %lx", rpe->pIDH, *dwCheckSum);
+        // microsoft doesn't restore the old checksum tho
+            rpe->pINH->OptionalHeader.CheckSum = dwOldChecksum; 
+            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), dwProt, &dwProt))
+                return LOGICAL_FALSE;
+            return LOGICAL_TRUE;
+        }
+    return LOGICAL_FALSE;
+}
+
+/// <summary>
 ///	Frees a file that was allocated </summary>
 ///
 /// <param name="rpe">
