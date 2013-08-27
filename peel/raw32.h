@@ -50,4 +50,6 @@
 //    LOGICAL EXPORT LIBCALL MrEnumerateResources32(INOUT RAW_PE32* rpe);
 
     LOGICAL EXPORT LIBCALL MrRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBase, IN const PTR32 dwNewBase);
+
+    LOGICAL EXPORT LIBCALL MrCalculateChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum);
 #pragma endregion
