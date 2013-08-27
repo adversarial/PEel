@@ -236,13 +236,12 @@ LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBu
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, 
 /// LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(IN const RAW_PE32* rpe, OUT DWORD* dwChecksum) {
+LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum) {
     PTR32 dwMaxPa = 0;
     LOGICAL lResult;
     USHORT* pCurrBlock = NULL;
     DWORD dwProt,
-          dwOldChecksum,
-          dwCalcsum;
+          dwOldChecksum;
     unsigned int i;
 
     lResult = MrMaxPa32(rpe, &dwMaxPa);
