@@ -153,24 +153,24 @@ DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics)
 ///
 /// <returns>
 /// Characteristics for use in section header </returns>
-DWORD EXPORT LIBCALL MrPageToSectionProtection(IN DWORD dwProtection) {
+DWORD EXPORT LIBCALL MrPageToSectionProtection(IN const DWORD dwProtection) {
     DWORD dwChar = 0;
     if (dwProtection & PAGE_NOACCESS) // PAGE_NOACCESS
         return dwChar;
     if (dwProtection & PAGE_NOCACHE)
         dwChar |= IMAGE_SCN_MEM_NOT_CACHED;
-    if (dwProtection & 0x70) // execute permissions
+    if (dwProtection & 0x70) // execute permissions on 2nd nibble
         dwChar |= IMAGE_SCN_MEM_EXECUTE;
-    if (dwProtection & 0x44)
+    if (dwProtection & 0x44) // write permissions on 3rd bit of each nibble
         dwChar |= IMAGE_SCN_MEM_WRITE;
-    if (dwProtection & 0x66)
-        dwChar |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE;
-    // now for the code/data parts
-    if (dwChar & IMAGE_SCN_MEM_READ 
+    if (dwProtection & 0x22) // read permissions on 2nd bit of each nibble
+        dwChar |= IMAGE_SCN_MEM_READ;
+  // other status flags
+    if (dwChar & IMAGE_SCN_MEM_READ     // correct this
      && dwChar & IMAGE_SCN_MEM_EXECUTE)
         dwChar |= IMAGE_SCN_CNT_CODE;
-    if (dwChar & IMAGE_SCN_MEM_READ
-     && dwChar & IMAGE_SCN_MEM_WRITE)
-        dwChar |= IMAGE_SCN_CNT_INITIALIZED_DATA | IMAGE_SCN_CNT_UNINITIALIZED_DATA;
+    if (dwChar & IMAGE_SCN_MEM_READ     // we really need the pe headers to check if there will be unitialized data
+     && dwChar & IMAGE_SCN_MEM_WRITE)   // (padding at end of section), however it's usually safe to assume there is
+        dwChar |= IMAGE_SCN_CNT_INITIALIZED_DATA;
     return dwChar;
 }
