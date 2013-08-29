@@ -30,14 +30,14 @@
 LOGICAL EXPORT LIBCALL MrRvaToPa32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR32* Pa) {
     unsigned int i;
 
-    if (Rva <= rpe->pINH->OptionalHeader.SizeOfHeaders) {
+    if (Rva <= rpe->pNtHdr->OptionalHeader.SizeOfHeaders) {
         *Pa = Rva;
         return LOGICAL_TRUE;
     }
-    for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-        if (Rva < rpe->ppISH[i]->VirtualAddress + MrAlignUp32(rpe->ppISH[i]->SizeOfRawData, rpe->pINH->OptionalHeader.SectionAlignment)
-            && Rva >= rpe->ppISH[i]->VirtualAddress) {
-                *Pa = Rva - rpe->ppISH[i]->VirtualAddress + rpe->ppISH[i]->PointerToRawData;
+    for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        if (Rva < rpe->ppSecHdr[i]->VirtualAddress + MrAlignUp32(rpe->ppSecHdr[i]->SizeOfRawData, rpe->pNtHdr->OptionalHeader.SectionAlignment)
+            && Rva >= rpe->ppSecHdr[i]->VirtualAddress) {
+                *Pa = Rva - rpe->ppSecHdr[i]->VirtualAddress + rpe->ppSecHdr[i]->PointerToRawData;
                 return LOGICAL_TRUE;
         }
     }
@@ -59,14 +59,14 @@ LOGICAL EXPORT LIBCALL MrRvaToPa32(IN const RAW_PE32* rpe, IN const PTR32 Rva, O
 LOGICAL EXPORT LIBCALL MrPaToRva32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR32* Rva) {
     unsigned int i;
 
-    if (Pa <= rpe->pINH->OptionalHeader.SizeOfHeaders) {
+    if (Pa <= rpe->pNtHdr->OptionalHeader.SizeOfHeaders) {
         *Rva = Pa;
         return LOGICAL_TRUE;
     }
-    for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-        if (Pa < rpe->ppISH[i]->PointerToRawData + rpe->ppISH[i]->SizeOfRawData
-            && Pa >= rpe->ppISH[i]->PointerToRawData) {
-                *Rva = Pa - rpe->ppISH[i]->PointerToRawData + rpe->ppISH[i]->VirtualAddress;
+    for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        if (Pa < rpe->ppSecHdr[i]->PointerToRawData + rpe->ppSecHdr[i]->SizeOfRawData
+            && Pa >= rpe->ppSecHdr[i]->PointerToRawData) {
+                *Rva = Pa - rpe->ppSecHdr[i]->PointerToRawData + rpe->ppSecHdr[i]->VirtualAddress;
         }
     }
     return LOGICAL_FALSE;
@@ -89,28 +89,28 @@ LOGICAL EXPORT LIBCALL MrGetRvaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Rva,
     unsigned int i;
 
     // check if it's in headers
-    if (Rva > rpe->pINH->OptionalHeader.SizeOfHeaders) {
+    if (Rva > rpe->pNtHdr->OptionalHeader.SizeOfHeaders) {
         // find section
-        for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-            if (Rva >= rpe->ppISH[i]->VirtualAddress
-             && Rva < rpe->ppISH[i]->VirtualAddress + MrAlignUp32(rpe->ppISH[i]->Misc.VirtualSize, rpe->pINH->OptionalHeader.SectionAlignment)) {
-                Offset = (PTR)rpe->ppSectionData[i] + Rva - rpe->ppISH[i]->VirtualAddress;
+        for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+            if (Rva >= rpe->ppSecHdr[i]->VirtualAddress
+             && Rva < rpe->ppSecHdr[i]->VirtualAddress + MrAlignUp32(rpe->ppSecHdr[i]->Misc.VirtualSize, rpe->pNtHdr->OptionalHeader.SectionAlignment)) {
+                Offset = (PTR)rpe->ppSectionData[i] + Rva - rpe->ppSecHdr[i]->VirtualAddress;
                 break;
             }
         }
     } else if (Rva < SIZEOF_PE_HEADERS32(rpe)) {
         if (Rva < sizeof(DOS_HEADER))
-            Offset = (PTR)rpe->pIDH + Rva;
+            Offset = (PTR)rpe->pDosHdr + Rva;
         else if (Rva < sizeof(DOS_HEADER) + sizeof(DOS_STUB))
-            Offset = (PTR)rpe->pIDS + Rva - sizeof(DOS_HEADER);
-        else if (Rva < rpe->pIDH->e_lfanew + sizeof(NT_HEADERS32))
-            Offset = (PTR)rpe->pINH + Rva - rpe->pIDH->e_lfanew;
+            Offset = (PTR)rpe->pDosStub + Rva - sizeof(DOS_HEADER);
+        else if (Rva < rpe->pDosHdr->e_lfanew + sizeof(NT_HEADERS32))
+            Offset = (PTR)rpe->pNtHdr + Rva - rpe->pDosHdr->e_lfanew;
         else if (Rva < SIZEOF_PE_HEADERS32(rpe)) {
             // find correct header
-            for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-                if (Rva > rpe->pIDH->e_lfanew + sizeof(NT_HEADERS32) + sizeof(SECTION_HEADER) * i
-                 && Rva < rpe->pIDH->e_lfanew + sizeof(NT_HEADERS32) + sizeof(SECTION_HEADER) * (i + 1)) {
-                 Offset = (PTR)rpe->ppSectionData[i] + Rva - rpe->pIDH->e_lfanew - sizeof(NT_HEADERS32) - sizeof(SECTION_HEADER) * (i - 1);
+            for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+                if (Rva > rpe->pDosHdr->e_lfanew + sizeof(NT_HEADERS32) + sizeof(SECTION_HEADER) * i
+                 && Rva < rpe->pDosHdr->e_lfanew + sizeof(NT_HEADERS32) + sizeof(SECTION_HEADER) * (i + 1)) {
+                 Offset = (PTR)rpe->ppSectionData[i] + Rva - rpe->pDosHdr->e_lfanew - sizeof(NT_HEADERS32) - sizeof(SECTION_HEADER) * (i - 1);
                  break;
                 }
             }
@@ -282,11 +282,11 @@ LOGICAL EXPORT LIBCALL MrMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa) {
     PTR32 dwLargeAddr;
     unsigned int i;
     
-    *MaxPa = rpe->pINH->OptionalHeader.SizeOfHeaders;
-    if (!rpe->pINH->FileHeader.NumberOfSections)
+    *MaxPa = rpe->pNtHdr->OptionalHeader.SizeOfHeaders;
+    if (!rpe->pNtHdr->FileHeader.NumberOfSections)
         return LOGICAL_TRUE;
-    for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-        dwLargeAddr = rpe->ppISH[i]->PointerToRawData + rpe->ppISH[i]->SizeOfRawData;
+    for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        dwLargeAddr = rpe->ppSecHdr[i]->PointerToRawData + rpe->ppSecHdr[i]->SizeOfRawData;
         *MaxPa = dwLargeAddr > *MaxPa ? dwLargeAddr : *MaxPa; // max(dwLargeAddr, *MaxPa) 
     }
     return LOGICAL_TRUE;
@@ -306,18 +306,18 @@ LOGICAL EXPORT LIBCALL MrMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva) {
     PTR32 dwLargeAddr;
     unsigned int i;
     
-    *MaxRva = rpe->pINH->OptionalHeader.SizeOfHeaders;
-    if (!rpe->pINH->FileHeader.NumberOfSections)
+    *MaxRva = rpe->pNtHdr->OptionalHeader.SizeOfHeaders;
+    if (!rpe->pNtHdr->FileHeader.NumberOfSections)
         return LOGICAL_TRUE;
-    for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-        dwLargeAddr = rpe->ppISH[i]->VirtualAddress + MrAlignUp32(rpe->ppISH[i]->Misc.VirtualSize, rpe->pINH->OptionalHeader.SectionAlignment);
+    for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        dwLargeAddr = rpe->ppSecHdr[i]->VirtualAddress + MrAlignUp32(rpe->ppSecHdr[i]->Misc.VirtualSize, rpe->pNtHdr->OptionalHeader.SectionAlignment);
         *MaxRva = dwLargeAddr > *MaxRva ? dwLargeAddr : *MaxRva; // max(dwLargeAddr, *MaxRva) 
     }
     return LOGICAL_TRUE;
 }
 
 /// <summary>
-///	Loads import list into rpe->pIL </summary>
+///	Loads import list into rpe->pImport </summary>
 ///
 /// <param name="rpe">
 /// Loaded RAW_PE32 </param>
@@ -328,23 +328,23 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
     IMPORT_DESCRIPTOR   *iidDesc = NULL;
     THUNK_DATA32        *tdIat = NULL;
     IMPORT_NAME         *inName = NULL;
-    IMPORT_LIBRARY32    *pIL = NULL;
+    IMPORT_LIBRARY32    *pImport = NULL;
     IMPORT_ITEM32       *pII = NULL;
     
     // do we even have to do imports?
-    if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
-     && !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
+    if (!rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
+     && !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
         return LOGICAL_TRUE;
-    rpe->pIL = (IMPORT_LIBRARY32*)calloc(1, sizeof(IMPORT_LIBRARY32));
-    if (rpe->pIL == NULL)
+    rpe->pImport = (IMPORT_LIBRARY32*)calloc(1, sizeof(IMPORT_LIBRARY32));
+    if (rpe->pImport == NULL)
         return LOGICAL_MAYBE;
-    pIL = rpe->pIL;
-    iidDesc = (IMPORT_DESCRIPTOR*)((PTR)rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+    pImport = rpe->pImport;
+    iidDesc = (IMPORT_DESCRIPTOR*)((PTR)rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
     if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)iidDesc, (PTR*)&iidDesc)))
         return LOGICAL_FALSE;
     for (; iidDesc->Characteristics; ++iidDesc) {
-        pIL->Library = (char*)iidDesc->Name;
-        if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pIL->Library, (PTR*)&pIL->Library)))
+        pImport->Library = (char*)iidDesc->Name;
+        if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pImport->Library, (PTR*)&pImport->Library)))
             return LOGICAL_FALSE;
         tdIat = (THUNK_DATA32*)iidDesc->FirstThunk;
         if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)tdIat, (PTR*)&tdIat)))
@@ -352,7 +352,7 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
         pII = (IMPORT_ITEM32*)calloc(1, sizeof(IMPORT_ITEM32));
         if (pII == NULL)
             return LOGICAL_MAYBE;
-        pIL->iiImportList = pII;
+        pImport->iiImportList = pII;
         for (; tdIat->u1.Function; ++tdIat) {
             if (tdIat->u1.Ordinal & IMAGE_ORDINAL_FLAG32)
                 pII->Ordinal = (char*)tdIat->u1.Ordinal;
@@ -368,16 +368,16 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
                 return LOGICAL_MAYBE;
             pII = (IMPORT_ITEM32*)pII->Flink;
         }
-        pIL->Flink = calloc(1, sizeof(IMPORT_LIBRARY32));
-        if (pIL->Flink == NULL)
+        pImport->Flink = calloc(1, sizeof(IMPORT_LIBRARY32));
+        if (pImport->Flink == NULL)
             return LOGICAL_MAYBE;
-        pIL = (IMPORT_LIBRARY32*)pIL->Flink;
+        pImport = (IMPORT_LIBRARY32*)pImport->Flink;
     }
     return LOGICAL_TRUE;
 }
 
 /// <summary>
-///	Frees import lists in rpe->pIL </summary>
+///	Frees import lists in rpe->pImport </summary>
 ///
 /// <param name="rpe">
 /// Loaded RAW_PE32 </param>
@@ -385,28 +385,28 @@ LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe) {
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
 LOGICAL EXPORT LIBCALL MrFreeEnumeratedImports32(INOUT RAW_PE32* rpe) {
-    IMPORT_LIBRARY32  *pIL = NULL,
-                      *pILNext = NULL;
+    IMPORT_LIBRARY32  *pImport = NULL,
+                      *pImportNext = NULL;
     IMPORT_ITEM32 *pII = NULL,
                   *pIINext = NULL;
 
-    if (rpe->pIL == NULL)
+    if (rpe->pImport == NULL)
         return LOGICAL_FALSE;
     
-    for (pIL = rpe->pIL; pIL != NULL; pIL = pILNext) {
-        for (pII = pIL->iiImportList; pII != NULL; pII = pIINext) {
+    for (pImport = rpe->pImport; pImport != NULL; pImport = pImportNext) {
+        for (pII = pImport->iiImportList; pII != NULL; pII = pIINext) {
             pIINext = (IMPORT_ITEM32*)pII->Flink;
             free(pII);
         }
-        pILNext = (IMPORT_LIBRARY32*)pIL->Flink;
-        free(pIL);
+        pImportNext = (IMPORT_LIBRARY32*)pImport->Flink;
+        free(pImport);
     }
-    rpe->pIL = NULL;
+    rpe->pImport = NULL;
     return LOGICAL_TRUE;
 }
 
 /// <summary>
-///	Loads export list into rpe->pEL </summary>
+///	Loads export list into rpe->pExport </summary>
 ///
 /// <param name="rpe">
 /// Loaded RAW_PE32 </param>
@@ -415,7 +415,7 @@ LOGICAL EXPORT LIBCALL MrFreeEnumeratedImports32(INOUT RAW_PE32* rpe) {
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
 LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
     EXPORT_DIRECTORY* pED = NULL;
-    EXPORT_LIST32* pEL = NULL;
+    EXPORT_LIST32* pExport = NULL;
     unsigned int i;
 
     PTR32* ppszNames = NULL;
@@ -423,14 +423,14 @@ LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
     PTR32* ppFunctionPtrs;
 
     // do we even have exports?
-    if (!rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size
-     && !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
+    if (!rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size
+     && !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
         return LOGICAL_TRUE;
-    rpe->pEL = (EXPORT_LIST32*)calloc(1, sizeof(EXPORT_LIST32));
-    if (rpe->pEL == NULL)
+    rpe->pExport = (EXPORT_LIST32*)calloc(1, sizeof(EXPORT_LIST32));
+    if (rpe->pExport == NULL)
         return LOGICAL_MAYBE;
-    pEL = rpe->pEL;
-    pED = (EXPORT_DIRECTORY*)rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
+    pExport = rpe->pExport;
+    pED = (EXPORT_DIRECTORY*)rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress;
     if (!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)pED, (PTR*)&pED)))
         return LOGICAL_FALSE;
     ppszNames = (PTR32*)pED->AddressOfNames;
@@ -444,21 +444,21 @@ LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
         return LOGICAL_FALSE;
     // wierd solution but theoretically one could be bigger so we'll pick the biggest one
     for (i = 0; i < (pED->NumberOfFunctions > pED->NumberOfNames ? pED->NumberOfFunctions : pED->NumberOfNames); ++i) {
-        pEL->Name = (char*)*ppszNames++;
-        MrGetRvaPtr32(rpe, (PTR32)pEL->Name, (PTR*)&pEL->Name);
-        pEL->Ordinal = (char*)*ppdwOrdinals++;
-        MrGetRvaPtr32(rpe, (PTR32)pEL->Ordinal, (PTR*)&pEL->Ordinal);
-        pEL->dwItemPtr = (PTR32*)ppFunctionPtrs++;
-        pEL->Flink = calloc(1, sizeof(EXPORT_LIST32));
-        if (pEL->Flink == NULL)
+        pExport->Name = (char*)*ppszNames++;
+        MrGetRvaPtr32(rpe, (PTR32)pExport->Name, (PTR*)&pExport->Name);
+        pExport->Ordinal = (char*)*ppdwOrdinals++;
+        MrGetRvaPtr32(rpe, (PTR32)pExport->Ordinal, (PTR*)&pExport->Ordinal);
+        pExport->dwItemPtr = (PTR32*)ppFunctionPtrs++;
+        pExport->Flink = calloc(1, sizeof(EXPORT_LIST32));
+        if (pExport->Flink == NULL)
             return LOGICAL_MAYBE;
-        pEL = (EXPORT_LIST32*)pEL->Flink;
+        pExport = (EXPORT_LIST32*)pExport->Flink;
     }
     return LOGICAL_TRUE;
 }
 
 /// <summary>
-///	Frees export list in rpe->pEL </summary>
+///	Frees export list in rpe->pExport </summary>
 ///
 /// <param name="rpe">
 /// Loaded RAW_PE32 </param>
@@ -466,16 +466,16 @@ LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe) {
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
 LOGICAL EXPORT LIBCALL MrFreeEnumeratedExports32(INOUT RAW_PE32* rpe) {
-    EXPORT_LIST32 *pEL = NULL,
-                  *pELNext = NULL;
+    EXPORT_LIST32 *pExport = NULL,
+                  *pExportNext = NULL;
 
-    if (rpe->pEL == NULL)
+    if (rpe->pExport == NULL)
         return LOGICAL_FALSE;
-    for (pEL = rpe->pEL; pEL != NULL; pEL = (EXPORT_LIST32*)pELNext) {
-        pELNext = (EXPORT_LIST32*)pEL->Flink;
-        free(pEL);
+    for (pExport = rpe->pExport; pExport != NULL; pExport = (EXPORT_LIST32*)pExportNext) {
+        pExportNext = (EXPORT_LIST32*)pExport->Flink;
+        free(pExport);
     }
-    rpe->pEL = NULL;
+    rpe->pExport = NULL;
     return LOGICAL_TRUE;
 }
 
@@ -485,9 +485,9 @@ LOGICAL EXPORT LIBCALL MrFreeEnumeratedExports32(INOUT RAW_PE32* rpe) {
 /// <param name="rpe">
 /// Loaded RAW_PE32 </param>
 /// <param name="dwOldBase">
-/// Current base address that rpe is relocated to, most likely rpe->pINH->OptionalHeader->ImageBase
+/// Current base address that rpe is relocated to, most likely rpe->pNtHdr->OptionalHeader->ImageBase
 /// <param name="dwNewBase">
-/// Base to relocate to, most likely rpe->pIDH
+/// Base to relocate to, most likely rpe->pDosHdr
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE error, LOGICAL_MAYBE on crt/memory allocation error </returns>
@@ -503,12 +503,12 @@ LOGICAL EXPORT LIBCALL MrRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBas
     // do we even have relocations?
 	dwDelta = dwNewBase - dwOldBase;
 	if (!dwDelta
-	 || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size
-	 || !rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress)
+	 || !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size
+	 || !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress)
 		return LOGICAL_TRUE;
 
-	cbRelocSection = rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
-	brReloc = (BASE_RELOCATION*)(rpe->pINH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
+	cbRelocSection = rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].Size;
+	brReloc = (BASE_RELOCATION*)(rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress);
     if(!LOGICAL_SUCCESS(MrGetRvaPtr32(rpe, (PTR32)brReloc, (PTR*)&brReloc)))
         return LOGICAL_FALSE;
 	for (dwRelocBase = (PTR)brReloc; (PTR)brReloc < dwRelocBase + cbRelocSection; brReloc = (BASE_RELOCATION*)((PTR)brReloc + brReloc->SizeOfBlock)) {
@@ -527,7 +527,7 @@ LOGICAL EXPORT LIBCALL MrRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBas
 		    }
 	    }
     }
-	rpe->dwFlags.Relocated = TRUE;
+	rpe->LoadStatus.Relocated = TRUE;
 	return LOGICAL_TRUE;
 }
 
@@ -554,49 +554,49 @@ LOGICAL EXPORT LIBCALL MrCalculateChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwC
         return lResult;
     // some wierd shit in ntdll.RtlImageNtHeaderEx to get NT_HEADERS*
     // arg3 ends up being &NT_HEADERS.Signature
-        if (rpe->pIDH != NULL || rpe->pIDH == INVALID_HANDLE_VALUE || dwMaxPa != 0) {
+        if (rpe->pDosHdr != NULL || rpe->pDosHdr == INVALID_HANDLE_VALUE || dwMaxPa != 0) {
             *dwChecksum = 0;
         // RtlImageNtHeadersEx(?, Base, Size, Out)
-            if (rpe->pIDH->e_magic != IMAGE_DOS_SIGNATURE || (PTR32)rpe->pIDH->e_lfanew > dwMaxPa)
+            if (rpe->pDosHdr->e_magic != IMAGE_DOS_SIGNATURE || (PTR32)rpe->pDosHdr->e_lfanew > dwMaxPa)
                 return LOGICAL_FALSE;
-            if (rpe->pINH == NULL || rpe->pINH == INVALID_HANDLE_VALUE || rpe->pINH->FileHeader.SizeOfOptionalHeader == 0) {
+            if (rpe->pNtHdr == NULL || rpe->pNtHdr == INVALID_HANDLE_VALUE || rpe->pNtHdr->FileHeader.SizeOfOptionalHeader == 0) {
                 return LOGICAL_FALSE;
             }
         // and now I'm bored of literally translating.
         // welp here's the "optimized" version
-            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), PAGE_READWRITE, &dwProt))
+            if (!VirtualProtect((LPVOID)&rpe->pNtHdr->OptionalHeader.CheckSum, sizeof(rpe->pNtHdr->OptionalHeader.CheckSum), PAGE_READWRITE, &dwProt))
                 return LOGICAL_FALSE;
-            dwOldChecksum = rpe->pINH->OptionalHeader.CheckSum;
+            dwOldChecksum = rpe->pNtHdr->OptionalHeader.CheckSum;
         // checksumming must be done with 0'd old one (how would we checksum the future?)
-            rpe->pINH->OptionalHeader.CheckSum = 0;
+            rpe->pNtHdr->OptionalHeader.CheckSum = 0;
             
         // micro$hit had some fancy optimi-say-shuns [southern accent here]
         // well fuck that, maybe -O2 will help
-            pCurrBlock = (USHORT*)rpe->pIDH;
-            for (i = 0; i < (rpe->pIDH->e_cparhdr << 4) / sizeof(USHORT); ++i) {
+            pCurrBlock = (USHORT*)rpe->pDosHdr;
+            for (i = 0; i < (rpe->pDosHdr->e_cparhdr << 4) / sizeof(USHORT); ++i) {
                 *dwChecksum = *(USHORT*)pCurrBlock++ + *dwChecksum;
-                *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> 16);
+                *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> (sizeof(USHORT) * CHAR_BIT));
             }
-            pCurrBlock = (USHORT*)rpe->pINH;
+            pCurrBlock = (USHORT*)rpe->pNtHdr;
             for (i = 0; i < sizeof(NT_HEADERS32) / sizeof(USHORT); ++i) {
                 *dwChecksum = *(USHORT*)pCurrBlock++ + *dwChecksum;
-                *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> 16);
+				*dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> (sizeof(USHORT) * CHAR_BIT));
             }
-            for (k = 0; k < rpe->pINH->FileHeader.NumberOfSections; ++k) {
+            for (k = 0; k < rpe->pNtHdr->FileHeader.NumberOfSections; ++k) {
                 pCurrBlock = (USHORT*)rpe->ppSectionData[k];
-                for (i = 0; i < rpe->ppISH[k]->SizeOfRawData / sizeof(USHORT); ++i) { // at least sizeofrawdata bytes will be there
+                for (i = 0; i < rpe->ppSecHdr[k]->SizeOfRawData / sizeof(USHORT); ++i) { // at least sizeofrawdata bytes should be there
                     *dwChecksum = *(USHORT*)pCurrBlock++ + *dwChecksum;
-                    *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> 16);
+                    *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> (sizeof(USHORT) * CHAR_BIT));
                 }
             }
-            *dwChecksum = (*dwChecksum & 0xffff) + (*dwChecksum >> 16);
+			*dwChecksum = (*dwChecksum & (USHORT)~0) + (*dwChecksum >> (sizeof(USHORT) * CHAR_BIT));
             if (dwMaxPa & 1) // for the idiots who use 1byte FileAlignment
-                *dwChecksum += (USHORT)*((char*)rpe->pIDH + dwMaxPa - 1);
+                *dwChecksum += (uint8_t)*((uint8_t*)rpe->pDosHdr + dwMaxPa - 1);
             *dwChecksum += dwMaxPa; // this took like 10 minutes to figure out what I was missing
-            dmsg("PE at %08lx has checksum %lx", rpe->pIDH, *dwCheckSum);
+            dmsg("PE at %08lx has checksum %lx", rpe->pDosHdr, *dwChecksum);
         // microsoft doesn't restore the old checksum tho
-            rpe->pINH->OptionalHeader.CheckSum = dwOldChecksum; 
-            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), dwProt, &dwProt))
+            rpe->pNtHdr->OptionalHeader.CheckSum = dwOldChecksum; 
+            if (!VirtualProtect((LPVOID)&rpe->pNtHdr->OptionalHeader.CheckSum, sizeof(rpe->pNtHdr->OptionalHeader.CheckSum), dwProt, &dwProt))
                 return LOGICAL_FALSE;
             return LOGICAL_TRUE;
         }

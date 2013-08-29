@@ -27,7 +27,5 @@
     LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
     LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
 
-    LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum);
-
     LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe);
 #pragma endregion
