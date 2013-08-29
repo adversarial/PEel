@@ -32,38 +32,38 @@ LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIR
     memset(&vm->PE, 0, sizeof(RAW_PE32));
 
     vm->pBaseAddr = (void*)pModuleBase;
-    vm->PE.pIDH = (DOS_HEADER*)pModuleBase;
+    vm->PE.pDosHdr = (DOS_HEADER*)pModuleBase;
 #if ! ACCEPT_INVALID_SIGNATURES
-    if (vm->PE.pIDH->e_magic != IMAGE_DOS_SIGNATURE)
+    if (vm->PE.pDosHdr->e_magic != IMAGE_DOS_SIGNATURE)
         return LOGICAL_FALSE;
 #endif
-    vm->PE.pIDS = (DOS_STUB*)((PTR)vm->pBaseAddr + sizeof(DOS_HEADER));
-    vm->PE.pINH = (NT_HEADERS32*)((PTR)vm->pBaseAddr + vm->PE.pIDH->e_lfanew);
+    vm->PE.pDosStub = (DOS_STUB*)((PTR)vm->pBaseAddr + sizeof(DOS_HEADER));
+    vm->PE.pNtHdr = (NT_HEADERS32*)((PTR)vm->pBaseAddr + vm->PE.pDosHdr->e_lfanew);
 #if ! ACCEPT_INVALID_SIGNATURES
-    if (vm->PE.pINH->Signature != IMAGE_NT_SIGNATURE
-     || vm->PE.pINH->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
+    if (vm->PE.pNtHdr->Signature != IMAGE_NT_SIGNATURE
+     || vm->PE.pNtHdr->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC) {
         dmsg(TEXT("\nNT Headers signature or magic invalid!"));
         return LOGICAL_FALSE;
     }
 #endif
-    if (vm->PE.pINH->FileHeader.NumberOfSections) {
-        vm->PE.ppISH = (SECTION_HEADER**)malloc(vm->PE.pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (vm->PE.ppISH == NULL)
+    if (vm->PE.pNtHdr->FileHeader.NumberOfSections) {
+        vm->PE.ppSecHdr = (SECTION_HEADER**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (vm->PE.ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        vm->PE.ppSectionData = (void**)malloc(vm->PE.pINH->FileHeader.NumberOfSections * sizeof(void*));
+        vm->PE.ppSectionData = (void**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < vm->PE.pINH->FileHeader.NumberOfSections; ++i) {
-            vm->PE.ppISH[i] = (SECTION_HEADER*)((PTR)&vm->PE.pINH->OptionalHeader + vm->PE.pINH->FileHeader.SizeOfOptionalHeader + (sizeof(SECTION_HEADER) * i));
-            vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppISH[i]->VirtualAddress);
+        for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+            vm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&vm->PE.pNtHdr->OptionalHeader + vm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + (sizeof(SECTION_HEADER) * i));
+            vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress);
         }
     } else {
-        vm->PE.ppISH = NULL;
+        vm->PE.ppSecHdr = NULL;
         vm->PE.ppSectionData = NULL;
         dmsg(TEXT("\nPE image at 0x%p has 0 sections!"), vm->pBaseAddr);
     }
-    memset(&vm->PE.dwFlags, 0, sizeof(vm->PE.dwFlags));
-    vm->PE.dwFlags.Attached = TRUE;
+    memset(&vm->PE.LoadStatus, 0, sizeof(vm->PE.LoadStatus));
+    vm->PE.LoadStatus.Attached = TRUE;
     dmsg(TEXT("\nAttached to PE image at 0x%p"), vm->pBaseAddr);
     return LOGICAL_TRUE;
 }
@@ -77,15 +77,25 @@ LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIR
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
-    if (!vm->PE.dwFlags.Attached)
+    VIRTUAL_MODULE32 *vmNext,
+                     *vmPrev;
+    
+    if (!vm->PE.LoadStatus.Attached)
         return LOGICAL_FALSE;
 
-    if (vm->PE.ppISH != NULL)
-        free(vm->PE.ppISH);
+    if (vm->PE.ppSecHdr != NULL)
+        free(vm->PE.ppSecHdr);
     if (vm->PE.ppSectionData != NULL)
         free(vm->PE.ppSectionData);
+    dmsg(TEXT("\nUnlinking PE Image at %p"), vm->pBaseAddr);
+    vmPrev = (VIRTUAL_MODULE32*)vm->Blink;
+    vmNext = (VIRTUAL_MODULE32*)vm->Flink;
+    if (vmPrev != NULL)
+        vmPrev->Flink = vmNext;
+    if (vmNext != NULL)
+        vmNext->Blink = vmPrev;
     dmsg(TEXT("\nDetached from PE image at 0x%p"), vm->pBaseAddr);
-    memset(&vm->PE, 0, sizeof(RAW_PE32));
+    memset(vm, 0, sizeof(VIRTUAL_MODULE32));
     return LOGICAL_TRUE;
 }
 
@@ -132,32 +142,32 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxPa);
     
-    rpe->pIDH = (DOS_HEADER*)pBuffer;
-    memmove(rpe->pIDH, vm->PE.pIDH, sizeof(DOS_HEADER));
-    rpe->pIDS = (DOS_STUB*)((PTR)rpe->pIDH + sizeof(DOS_HEADER));
-    memmove(rpe->pIDS, vm->PE.pIDS, rpe->pIDH->e_lfanew - sizeof(DOS_HEADER));
-    rpe->pINH = (NT_HEADERS32*)((PTR)rpe->pIDH + rpe->pIDH->e_lfanew);
-    memmove(rpe->pINH, vm->PE.pINH, sizeof(NT_HEADERS32));
-    if (rpe->pINH->FileHeader.NumberOfSections) {
-        rpe->ppISH = (SECTION_HEADER**)malloc(rpe->pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (rpe->ppISH == NULL)
+    rpe->pDosHdr = (DOS_HEADER*)pBuffer;
+    memmove(rpe->pDosHdr, vm->PE.pDosHdr, sizeof(DOS_HEADER));
+    rpe->pDosStub = (DOS_STUB*)((PTR)rpe->pDosHdr + sizeof(DOS_HEADER));
+    memmove(rpe->pDosStub, vm->PE.pDosStub, rpe->pDosHdr->e_lfanew - sizeof(DOS_HEADER));
+    rpe->pNtHdr = (NT_HEADERS32*)((PTR)rpe->pDosHdr + rpe->pDosHdr->e_lfanew);
+    memmove(rpe->pNtHdr, vm->PE.pNtHdr, sizeof(NT_HEADERS32));
+    if (rpe->pNtHdr->FileHeader.NumberOfSections) {
+        rpe->ppSecHdr = (SECTION_HEADER**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (rpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        rpe->ppSectionData = (void**)malloc(rpe->pINH->FileHeader.NumberOfSections * sizeof(void*));
+        rpe->ppSectionData = (void**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-            rpe->ppISH[i] = (SECTION_HEADER*)((PTR)&rpe->pINH->OptionalHeader + rpe->pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            memmove(rpe->ppISH[i], vm->PE.ppISH[i], sizeof(SECTION_HEADER));
-            rpe->ppSectionData[i] = (void*)((PTR)rpe->pIDH + rpe->ppISH[i]->PointerToRawData);
-            memmove(rpe->ppSectionData[i], vm->PE.ppSectionData[i], rpe->ppISH[i]->SizeOfRawData);
+        for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+            rpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&rpe->pNtHdr->OptionalHeader + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            memmove(rpe->ppSecHdr[i], vm->PE.ppSecHdr[i], sizeof(SECTION_HEADER));
+            rpe->ppSectionData[i] = (void*)((PTR)rpe->pDosHdr + rpe->ppSecHdr[i]->PointerToRawData);
+            memmove(rpe->ppSectionData[i], vm->PE.ppSectionData[i], rpe->ppSecHdr[i]->SizeOfRawData);
         }
     } else {
-        rpe->ppISH = NULL;
+        rpe->ppSecHdr = NULL;
         rpe->ppSectionData = NULL;
     }
-    memset(&rpe->dwFlags, 0, sizeof(rpe->dwFlags));
-    rpe->dwFlags = vm->PE.dwFlags;
-    rpe->dwFlags.Attached = FALSE;
+    memset(&rpe->LoadStatus, 0, sizeof(rpe->LoadStatus));
+    rpe->LoadStatus = vm->PE.LoadStatus;
+    rpe->LoadStatus.Attached = FALSE;
     return LOGICAL_TRUE;
 }
 
@@ -207,32 +217,32 @@ LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* p
     memset((void*)pBuffer, 0, MaxPa);
 
     cvm->pBaseAddr = (void*)pBuffer;
-    cvm->PE.pIDH = (DOS_HEADER*)cvm->pBaseAddr;
-    memmove(cvm->PE.pIDH, vm->pBaseAddr, sizeof(DOS_HEADER));
-    cvm->PE.pIDS = (DOS_STUB*)((PTR)cvm->pBaseAddr + sizeof(DOS_HEADER));
-    memmove(cvm->PE.pIDS, vm->PE.pIDS, (PTR)cvm->PE.pIDH->e_lfanew - sizeof(DOS_HEADER));
-    cvm->PE.pINH = (NT_HEADERS32*)((PTR)cvm->pBaseAddr + cvm->PE.pIDH->e_lfanew);
-    memmove(cvm->PE.pINH, vm->PE.pINH, sizeof(NT_HEADERS32));
-    if (cvm->PE.pINH->FileHeader.NumberOfSections) {
-        cvm->PE.ppISH = (SECTION_HEADER**)malloc(cvm->PE.pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (cvm->PE.ppISH == NULL)
+    cvm->PE.pDosHdr = (DOS_HEADER*)cvm->pBaseAddr;
+    memmove(cvm->PE.pDosHdr, vm->pBaseAddr, sizeof(DOS_HEADER));
+    cvm->PE.pDosStub = (DOS_STUB*)((PTR)cvm->pBaseAddr + sizeof(DOS_HEADER));
+    memmove(cvm->PE.pDosStub, vm->PE.pDosStub, (PTR)cvm->PE.pDosHdr->e_lfanew - sizeof(DOS_HEADER));
+    cvm->PE.pNtHdr = (NT_HEADERS32*)((PTR)cvm->pBaseAddr + cvm->PE.pDosHdr->e_lfanew);
+    memmove(cvm->PE.pNtHdr, vm->PE.pNtHdr, sizeof(NT_HEADERS32));
+    if (cvm->PE.pNtHdr->FileHeader.NumberOfSections) {
+        cvm->PE.ppSecHdr = (SECTION_HEADER**)malloc(cvm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (cvm->PE.ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        cvm->PE.ppSectionData = (void**)malloc(cvm->PE.pINH->FileHeader.NumberOfSections * sizeof(void*));
+        cvm->PE.ppSectionData = (void**)malloc(cvm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (cvm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < cvm->PE.pINH->FileHeader.NumberOfSections; ++i) {
-            cvm->PE.ppISH[i] = (SECTION_HEADER*)((PTR)&cvm->PE.pINH->OptionalHeader + cvm->PE.pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            memmove(cvm->PE.ppISH[i], vm->PE.ppISH[i], sizeof(SECTION_HEADER));
-            cvm->PE.ppSectionData[i] = (void*)((PTR)cvm->pBaseAddr + cvm->PE.ppISH[i]->VirtualAddress);
-            memmove(cvm->PE.ppSectionData[i], vm->PE.ppSectionData[i], cvm->PE.ppISH[i]->Misc.VirtualSize);
+        for (i = 0; i < cvm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+            cvm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&cvm->PE.pNtHdr->OptionalHeader + cvm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            memmove(cvm->PE.ppSecHdr[i], vm->PE.ppSecHdr[i], sizeof(SECTION_HEADER));
+            cvm->PE.ppSectionData[i] = (void*)((PTR)cvm->pBaseAddr + cvm->PE.ppSecHdr[i]->VirtualAddress);
+            memmove(cvm->PE.ppSectionData[i], vm->PE.ppSectionData[i], cvm->PE.ppSecHdr[i]->Misc.VirtualSize);
         }
     } else {
-        cvm->PE.ppISH = NULL;
+        cvm->PE.ppSecHdr = NULL;
         cvm->PE.ppSectionData = NULL;
     }
-    memset(&cvm->PE.dwFlags, 0, sizeof(PE_FLAGS));
-    cvm->PE.dwFlags = vm->PE.dwFlags;
-    cvm->PE.dwFlags.Attached = FALSE;
+    memset(&cvm->PE.LoadStatus, 0, sizeof(PE_FLAGS));
+    cvm->PE.LoadStatus = vm->PE.LoadStatus;
+    cvm->PE.LoadStatus.Attached = FALSE;
     cvm->Blink = (void*)vm;
     cvm->Flink = vm->Flink;
     vm->Flink = (void*)cvm;
@@ -251,13 +261,13 @@ LOGICAL EXPORT LIBCALL MrProtectImage32(INOUT VIRTUAL_MODULE32* vm){
     DWORD dwProt;
     unsigned int i;
 
-    if (vm->PE.dwFlags.Protected)
+    if (vm->PE.LoadStatus.Protected)
         return LOGICAL_TRUE;
 
-    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pINH->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProt))
+    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProt))
         return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pINH->FileHeader.NumberOfSections; ++i) {
-        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppISH[i]->Misc.VirtualSize, vm->PE.pINH->OptionalHeader.SectionAlignment), MrSectionToPageProtection(vm->PE.ppISH[i]->Characteristics), &dwProt))
+    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppSecHdr[i]->Misc.VirtualSize, vm->PE.pNtHdr->OptionalHeader.SectionAlignment), MrSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics), &dwProt))
             return LOGICAL_FALSE;
     }
     return LOGICAL_TRUE;
@@ -276,13 +286,13 @@ LOGICAL EXPORT LIBCALL MrUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
     DWORD dwProt;
     unsigned int i;
 
-    if (!vm->PE.dwFlags.Protected)
+    if (!vm->PE.LoadStatus.Protected)
         return LOGICAL_TRUE;
 
-    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pINH->OptionalHeader.SizeOfHeaders, PAGE_READWRITE, &dwProt))
+    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READWRITE, &dwProt))
         return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pINH->FileHeader.NumberOfSections; ++i) {
-        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppISH[i]->Misc.VirtualSize, vm->PE.pINH->OptionalHeader.SectionAlignment), PAGE_READWRITE, &dwProt))
+    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppSecHdr[i]->Misc.VirtualSize, vm->PE.pNtHdr->OptionalHeader.SectionAlignment), PAGE_READWRITE, &dwProt))
             return LOGICAL_FALSE;
     }
     return LOGICAL_TRUE;
@@ -300,11 +310,11 @@ LOGICAL EXPORT LIBCALL MrFreeImage32(INOUT VIRTUAL_MODULE32* vm) {
     VIRTUAL_MODULE32 *vmNext,
                      *vmPrev;
     
-    if (vm->PE.dwFlags.Attached == TRUE)
+    if (vm->PE.LoadStatus.Attached == TRUE)
         return LOGICAL_FALSE;
 
-    if (vm->PE.ppISH != NULL)
-        free(vm->PE.ppISH);
+    if (vm->PE.ppSecHdr != NULL)
+        free(vm->PE.ppSecHdr);
     if (vm->PE.ppSectionData != NULL)
         free(vm->PE.ppSectionData);
     VirtualFree(vm->pBaseAddr, 0, MEM_RELEASE);

@@ -17,12 +17,12 @@
 
 #include <Windows.h>
 
-#define TRUE 1
+#define TRUE  1
 #define FALSE 0
 
 #pragma region Build Options
 #	define EXPORT_ALL_FUNCTIONS				TRUE	// FALSE will include only basic mode items
-#	define LOAD_LEGIT						FALSE	// Register module with PEB::LdrList
+#	define LOAD_LEGIT						TRUE	// Register module with PEB::LdrList
 #	define SHED_CODECAVES					TRUE	// Shed anything that is hiding in padding (and rich)
 #	define USE_NATIVE_FUNCTIONS				TRUE	// will attempt to use native functions (only windoze)
 #	define NO_CRT							TRUE	// plz use
@@ -39,7 +39,7 @@
 
 #pragma region DevEnable
 #	define X64_COMPATIBLE_YET				FALSE
-#	define HIDE_EXPORTS_PLZ					FALSE
+#	define HIDE_EXPORTS_PLZ					FALSE   // why is this even here
 #	define BASIC_MODE						FALSE	// only exports viewing functions
 #pragma endregion
 
@@ -81,7 +81,7 @@ static char szWatermark[] = "PEel v0.1 by karmabis"; // please don't remove, it'
 #		define EXPORT
 #	endif
 // Custom CRT in milk
-#	if NO_CRT
+#	if NO_CRT || USE_NATIVE_FUNCTIONS
 #		undef malloc
 #		undef calloc
 #		undef realloc

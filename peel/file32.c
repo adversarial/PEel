@@ -28,42 +28,42 @@
 LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe) {
     unsigned int i;
 
-    rpe->pIDH = (DOS_HEADER*)pFileBase;
+    rpe->pDosHdr = (DOS_HEADER*)pFileBase;
 #if ! ACCEPT_INVALID_SIGNATURES
-    if (rpe->pIDH->e_magic != IMAGE_DOS_SIGNATURE)
+    if (rpe->pDosHdr->e_magic != IMAGE_DOS_SIGNATURE)
         return LOGICAL_FALSE;
 #endif
-    rpe->pIDS = (DOS_STUB*)((PTR)rpe->pIDH + sizeof(DOS_HEADER));
-    rpe->pINH = (NT_HEADERS32*)((PTR)rpe->pIDH + rpe->pIDH->e_lfanew);
+    rpe->pDosStub = (DOS_STUB*)((PTR)rpe->pDosHdr + sizeof(DOS_HEADER));
+    rpe->pNtHdr = (NT_HEADERS32*)((PTR)rpe->pDosHdr + rpe->pDosHdr->e_lfanew);
 #if ACCEPT_INVALID_SIGNATURES
-    if (rpe->pINH->Signature != IMAGE_NT_SIGNATURE
-     || rpe->pINH->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
+    if (rpe->pNtHdr->Signature != IMAGE_NT_SIGNATURE
+     || rpe->pNtHdr->OptionalHeader.Magic != IMAGE_NT_OPTIONAL_HDR32_MAGIC)
         return LOGICAL_FALSE;
 #endif
-    if (rpe->pINH->FileHeader.NumberOfSections) {
-        rpe->ppISH = (SECTION_HEADER**)malloc(rpe->pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (rpe->ppISH == NULL)
+    if (rpe->pNtHdr->FileHeader.NumberOfSections) {
+        rpe->ppSecHdr = (SECTION_HEADER**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (rpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        rpe->ppSectionData = (void**)malloc(rpe->pINH->FileHeader.NumberOfSections * sizeof(void*));
+        rpe->ppSectionData = (void**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < rpe->pINH->FileHeader.NumberOfSections; ++i) {
-            rpe->ppISH[i] = (SECTION_HEADER*)((PTR)&rpe->pINH->OptionalHeader + rpe->pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            rpe->ppSectionData[i] = (void*)((PTR)rpe->pIDH + rpe->ppISH[i]->PointerToRawData);
+        for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+            rpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&rpe->pNtHdr->OptionalHeader + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            rpe->ppSectionData[i] = (void*)((PTR)rpe->pDosHdr + rpe->ppSecHdr[i]->PointerToRawData);
         }
     } else {
-        rpe->ppISH = NULL;
+        rpe->ppSecHdr = NULL;
         rpe->ppSectionData = NULL;
-        dmsg(TEXT("\nPE file at 0x%p has 0 sections!"), rpe->pIDH);
+        dmsg(TEXT("\nPE file at 0x%p has 0 sections!"), rpe->pDosHdr);
     }
-    memset(&rpe->dwFlags, 0, sizeof(rpe->dwFlags));
-    rpe->dwFlags.Attached = TRUE;
-    dmsg(TEXT("\nAttached to PE file at 0x%p"), rpe->pIDH);
+    memset(&rpe->LoadStatus, 0, sizeof(rpe->LoadStatus));
+    rpe->LoadStatus.Attached = TRUE;
+    dmsg(TEXT("\nAttached to PE file at 0x%p"), rpe->pDosHdr);
     return LOGICAL_TRUE;
 }
 
 /// <summary>
-///	Zeros and deallocates memory from an attached RAW_PE32. Only call if rpe::dwFlags::Attached == TRUE </summary>
+///	Zeros and deallocates memory from an attached RAW_PE32. Only call if rpe::LoadStatus::Attached == TRUE </summary>
 ///
 /// <param name="rpe">
 /// Pointer to RAW_PE32 struct that is filled </param>
@@ -71,13 +71,13 @@ LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE/memory error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe) {
-    if (!rpe->dwFlags.Attached)
+    if (!rpe->LoadStatus.Attached)
         return LOGICAL_FALSE;
-    if (rpe->ppISH != NULL)
-        free(rpe->ppISH);
+    if (rpe->ppSecHdr != NULL)
+        free(rpe->ppSecHdr);
     if (rpe->ppSectionData != NULL)
         free(rpe->ppSectionData);
-    dmsg(TEXT("\nDetached from PE file at 0x%p"), rpe->pIDH);
+    dmsg(TEXT("\nDetached from PE file at 0x%p"), rpe->pDosHdr);
     memset(rpe, 0, sizeof(RAW_PE32));
     return LOGICAL_TRUE;
 }
@@ -126,32 +126,32 @@ LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* 
     memset((void*)pBuffer, 0, MaxRva);
 
     vm->pBaseAddr = (void*)pBuffer;
-    vm->PE.pIDH = (DOS_HEADER*)vm->pBaseAddr;
-    memmove(vm->PE.pIDH, rpe->pIDH, sizeof(DOS_HEADER));
-    vm->PE.pIDS = (DOS_STUB*)((PTR)vm->pBaseAddr + sizeof(DOS_HEADER));
-    memmove(vm->PE.pIDS, rpe->pIDS, rpe->pIDH->e_lfanew - sizeof(DOS_HEADER));
-    vm->PE.pINH = (NT_HEADERS32*)((PTR)vm->pBaseAddr + vm->PE.pIDH->e_lfanew);
-    memmove(vm->PE.pINH, rpe->pINH, sizeof(NT_HEADERS32));
-    if (vm->PE.pINH->FileHeader.NumberOfSections) {
-        vm->PE.ppISH = (SECTION_HEADER**)malloc(vm->PE.pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (vm->PE.ppISH == NULL)
+    vm->PE.pDosHdr = (DOS_HEADER*)vm->pBaseAddr;
+    memmove(vm->PE.pDosHdr, rpe->pDosHdr, sizeof(DOS_HEADER));
+    vm->PE.pDosStub = (DOS_STUB*)((PTR)vm->pBaseAddr + sizeof(DOS_HEADER));
+    memmove(vm->PE.pDosStub, rpe->pDosStub, rpe->pDosHdr->e_lfanew - sizeof(DOS_HEADER));
+    vm->PE.pNtHdr = (NT_HEADERS32*)((PTR)vm->pBaseAddr + vm->PE.pDosHdr->e_lfanew);
+    memmove(vm->PE.pNtHdr, rpe->pNtHdr, sizeof(NT_HEADERS32));
+    if (vm->PE.pNtHdr->FileHeader.NumberOfSections) {
+        vm->PE.ppSecHdr = (SECTION_HEADER**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (vm->PE.ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        vm->PE.ppSectionData = (void**)malloc(vm->PE.pINH->FileHeader.NumberOfSections * sizeof(void*));
+        vm->PE.ppSectionData = (void**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < vm->PE.pINH->FileHeader.NumberOfSections; ++i) {
-            vm->PE.ppISH[i] = (SECTION_HEADER*)((PTR)&vm->PE.pINH->OptionalHeader + vm->PE.pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            memmove(vm->PE.ppISH[i], rpe->ppISH[i], sizeof(SECTION_HEADER));
-            vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppISH[i]->VirtualAddress);
-            memmove(vm->PE.ppSectionData[i], rpe->ppSectionData[i], vm->PE.ppISH[i]->Misc.VirtualSize);  // virtualsize isn't aligned (may break codecaves)
+        for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+            vm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&vm->PE.pNtHdr->OptionalHeader + vm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            memmove(vm->PE.ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
+            vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress);
+            memmove(vm->PE.ppSectionData[i], rpe->ppSectionData[i], vm->PE.ppSecHdr[i]->Misc.VirtualSize);  // virtualsize isn't aligned (may break codecaves)
         }
     } else {
-        vm->PE.ppISH = NULL;
+        vm->PE.ppSecHdr = NULL;
         vm->PE.ppSectionData = NULL;
     }
-    memset(&vm->PE.dwFlags, 0, sizeof(PE_FLAGS));
-    vm->PE.dwFlags = rpe->dwFlags;
-    vm->PE.dwFlags.Attached = FALSE;
+    memset(&vm->PE.LoadStatus, 0, sizeof(PE_FLAGS));
+    vm->PE.LoadStatus = rpe->LoadStatus;
+    vm->PE.LoadStatus.Attached = FALSE;
     return LOGICAL_TRUE;
 }
 
@@ -198,91 +198,33 @@ LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBu
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxPa);
 
-    crpe->pIDH = (DOS_HEADER*)pBuffer;
-    memmove(crpe->pIDH, rpe->pIDH, sizeof(DOS_HEADER));
-    crpe->pIDS = (DOS_STUB*)((PTR)crpe->pIDH + sizeof(DOS_HEADER));
-    memmove(crpe->pIDS, rpe->pIDS, (PTR)crpe->pIDH->e_lfanew - sizeof(DOS_HEADER));
-    crpe->pINH = (NT_HEADERS32*)((PTR)crpe->pIDH + crpe->pIDH->e_lfanew);
-    memmove(crpe->pINH, rpe->pINH, sizeof(NT_HEADERS32));
-    if (crpe->pINH->FileHeader.NumberOfSections) {
-        crpe->ppISH = (SECTION_HEADER**)malloc(crpe->pINH->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
-        if (crpe->ppISH == NULL)
+    crpe->pDosHdr = (DOS_HEADER*)pBuffer;
+    memmove(crpe->pDosHdr, rpe->pDosHdr, sizeof(DOS_HEADER));
+    crpe->pDosStub = (DOS_STUB*)((PTR)crpe->pDosHdr + sizeof(DOS_HEADER));
+    memmove(crpe->pDosStub, rpe->pDosStub, (PTR)crpe->pDosHdr->e_lfanew - sizeof(DOS_HEADER));
+    crpe->pNtHdr = (NT_HEADERS32*)((PTR)crpe->pDosHdr + crpe->pDosHdr->e_lfanew);
+    memmove(crpe->pNtHdr, rpe->pNtHdr, sizeof(NT_HEADERS32));
+    if (crpe->pNtHdr->FileHeader.NumberOfSections) {
+        crpe->ppSecHdr = (SECTION_HEADER**)malloc(crpe->pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        if (crpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        crpe->ppSectionData = (void**)malloc(crpe->pINH->FileHeader.NumberOfSections * sizeof(void*));
+        crpe->ppSectionData = (void**)malloc(crpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (crpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < crpe->pINH->FileHeader.NumberOfSections; ++i) {
-            crpe->ppISH[i] = (SECTION_HEADER*)((PTR)&crpe->pINH->OptionalHeader + crpe->pINH->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
-            memmove(crpe->ppISH[i], rpe->ppISH[i], sizeof(SECTION_HEADER));
-            crpe->ppSectionData[i] = (void*)((PTR)crpe->pIDH + crpe->ppISH[i]->PointerToRawData);
-            memmove(crpe->ppSectionData[i], rpe->ppSectionData[i], crpe->ppISH[i]->SizeOfRawData);
+        for (i = 0; i < crpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+            crpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&crpe->pNtHdr->OptionalHeader + crpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
+            memmove(crpe->ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
+            crpe->ppSectionData[i] = (void*)((PTR)crpe->pDosHdr + crpe->ppSecHdr[i]->PointerToRawData);
+            memmove(crpe->ppSectionData[i], rpe->ppSectionData[i], crpe->ppSecHdr[i]->SizeOfRawData);
         }
     } else {
-        crpe->ppISH = NULL;
+        crpe->ppSecHdr = NULL;
         crpe->ppSectionData = NULL;
     }
-    memset(&crpe->dwFlags, 0, sizeof(PE_FLAGS));
-    crpe->dwFlags = rpe->dwFlags;
-    crpe->dwFlags.Attached = FALSE;
+    memset(&crpe->LoadStatus, 0, sizeof(PE_FLAGS));
+    crpe->LoadStatus = rpe->LoadStatus;
+    crpe->LoadStatus.Attached = FALSE;
     return LOGICAL_TRUE;
-}
-
-/// <summary>
-///	Calculates PE header checksum for file </summary>
-///
-/// <param name="vpe">
-/// Pointer to RAW_PE32 containing loaded file </param>
-///
-/// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, 
-/// LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum) {
-    PTR32 dwMaxPa = 0;
-    LOGICAL lResult;
-    USHORT* pCurrBlock = NULL;
-    DWORD dwProt,
-          dwOldChecksum;
-    unsigned int i;
-
-    lResult = MrMaxPa32(rpe, &dwMaxPa);
-    if (!LOGICAL_SUCCESS(lResult))
-        return lResult;
-    // some wierd shit in ntdll.RtlImageNtHeaderEx to get NT_HEADERS*
-    // arg3 ends up being &NT_HEADERS.Signature
-        if (rpe->pIDH != NULL || rpe->pIDH == INVALID_HANDLE_VALUE || dwMaxPa != 0) {
-            *dwChecksum = 0;
-        // RtlImageNtHeadersEx(?, Base, Size, Out)
-            if (rpe->pIDH->e_magic != IMAGE_DOS_SIGNATURE || (PTR32)rpe->pIDH->e_lfanew > dwMaxPa)
-                return LOGICAL_FALSE;
-            if (rpe->pINH == NULL || rpe->pINH == INVALID_HANDLE_VALUE || rpe->pINH->FileHeader.SizeOfOptionalHeader == 0) {
-                return LOGICAL_FALSE;
-            }
-        // and now I'm bored of literally translating.
-        // welp here's the "optimized" version
-            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), PAGE_READWRITE, &dwProt))
-                return LOGICAL_FALSE;
-            dwOldChecksum = rpe->pINH->OptionalHeader.CheckSum;
-            rpe->pINH->OptionalHeader.CheckSum = 0;
-            
-        // micro$hit had some fancy optimi-say-shuns [southern accent here]
-        // well fuck that, maybe -O2 will help
-            pCurrBlock = (USHORT*)rpe->pIDH;
-            for (i = 0; i < dwMaxPa / sizeof(USHORT); ++i) {
-                *dwChecksum = *(USHORT*)pCurrBlock++ + *dwChecksum;
-                *dwChecksum = *(USHORT*)dwChecksum + (*dwChecksum >> 16);
-            }
-            *dwChecksum = (*dwChecksum & 0xffff) + (*dwChecksum >> 16);
-            if (dwMaxPa & 1) // for the idiots who use 1byte FileAlignment
-                *dwChecksum += (USHORT)*((char*)rpe->pIDH + dwMaxPa - 1);
-            *dwChecksum += dwMaxPa; // this took like 10 minutes to figure out what I was missing
-            dmsg("PE at %08lx has checksum %lx", rpe->pIDH, *dwCheckSum);
-        // microsoft doesn't restore the old checksum tho
-            rpe->pINH->OptionalHeader.CheckSum = dwOldChecksum; 
-            if (!VirtualProtect((LPVOID)&rpe->pINH->OptionalHeader.CheckSum, sizeof(rpe->pINH->OptionalHeader.CheckSum), dwProt, &dwProt))
-                return LOGICAL_FALSE;
-            return LOGICAL_TRUE;
-        }
-    return LOGICAL_FALSE;
 }
 
 /// <summary>
@@ -294,14 +236,14 @@ LOGICAL EXPORT LIBCALL MrCalculateFileChecksum32(INOUT RAW_PE32* rpe, OUT DWORD*
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
 LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe) {
-    if (rpe->dwFlags.Attached == TRUE)
+    if (rpe->LoadStatus.Attached == TRUE)
         return LOGICAL_FALSE;
 
-    if (rpe->ppISH != NULL)
-        free(rpe->ppISH);
+    if (rpe->ppSecHdr != NULL)
+        free(rpe->ppSecHdr);
     if (rpe->ppSectionData != NULL)
         free(rpe->ppSectionData);
-    VirtualFree(rpe->pIDH, 0, MEM_RELEASE);
+    VirtualFree(rpe->pDosHdr, 0, MEM_RELEASE);
     memset(rpe, 0, sizeof(RAW_PE32));
     return LOGICAL_TRUE;
 }
