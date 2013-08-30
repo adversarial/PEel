@@ -18,9 +18,6 @@
 #include "preproc.h"
 #include "types.h"
 
-//#pragma comment(linker, "/NODEFAULTLIB")
-//#pragma comment(linker, "LIBCTINY")
-
 /* 
    PEel: PE editing library
   
@@ -92,7 +89,7 @@ Additional notes:
                    *Flink;
         } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
 
-        typedef struct _CODECAVE_LINKED_LIST32 {
+        typedef struct _CODECAVE_LINKED_LIST64 {
             PTR64	Offset,		// physical offset
                     Rva,		// none of these fields need to be PTR64 but okay
                     Size,		// cb of file cave (can be 0)
@@ -225,7 +222,7 @@ Additional notes:
 #pragma region Basic Mode Prototypes
     // alignment & such
     PTR32 EXPORT LIBCALL MrAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
-    PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignment)
+    PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
     
     PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
     PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
@@ -243,6 +240,8 @@ Additional notes:
                                      sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections)
 #pragma endregion
 
+#include "hlp.h"
+#include "kpeb.h"
 #include "raw32.h"
 #include "file32.h"
 #include "virtual32.h"
