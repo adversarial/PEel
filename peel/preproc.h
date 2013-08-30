@@ -15,6 +15,8 @@
 
 #pragma once
 
+#define _CRT_SECURE_NO_WARNINGS
+
 #include <Windows.h>
 
 #define TRUE  1
@@ -44,7 +46,6 @@
 #pragma endregion
 
 #pragma region Environment
-#   define _CRT_SECURE_NO_WARNINGS
 #	ifndef NDEBUG
 #	define DEBUGMODE						TRUE
 #	endif
