@@ -54,6 +54,9 @@
     <ClInclude Include="hlp.h">
       <Filter>Hlp</Filter>
     </ClInclude>
+    <ClInclude Include="kpeb.h">
+      <Filter>Hlp</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="peel.c">
@@ -69,6 +72,9 @@
       <Filter>Mr\virtual</Filter>
     </ClCompile>
     <ClCompile Include="hlp.c">
+      <Filter>Hlp</Filter>
+    </ClCompile>
+    <ClCompile Include="kpeb.c">
       <Filter>Hlp</Filter>
     </ClCompile>
   </ItemGroup>
