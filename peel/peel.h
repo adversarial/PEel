@@ -240,8 +240,6 @@ Additional notes:
                                      sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections)
 #pragma endregion
 
-#include "hlp.h"
-#include "kpeb.h"
 #include "raw32.h"
 #include "file32.h"
 #include "virtual32.h"
