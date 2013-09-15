@@ -1,0 +1,25 @@
+1 ICON "..\\peel.ico"
+2 VERSIONINFO
+FILEVERSION     0,1,0,0
+PRODUCTVERSION  0,1,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", ""
+      VALUE "FileDescription", "PE editing library"
+      VALUE "FileVersion", "0.1"
+      VALUE "InternalName", "PEel_dll"
+      VALUE "LegalCopyright", "x8esix"
+      VALUE "OriginalFilename", "PEel.dll"
+      VALUE "ProductName", "PEel"
+      VALUE "ProductVersion", "0.1"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x809, 1252
+  END
+END

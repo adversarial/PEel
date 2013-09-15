@@ -1,0 +1,12 @@
+PEel changelog:
+
+SEE ..\README.RTF
+
+0.1 : (8/16-9/16):
+	Import enumerating
+	Export enumerating
+	Relocating
+	Checksumming
+	Image/file alignment attachments
+	Image/file alignment conversions
+	Helper functions for general data gathering
