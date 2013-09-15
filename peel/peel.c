@@ -155,6 +155,7 @@ DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics)
 /// Characteristics for use in section header </returns>
 DWORD EXPORT LIBCALL MrPageToSectionProtection(IN const DWORD dwProtection) {
     DWORD dwChar = 0;
+
     if (dwProtection & PAGE_NOACCESS) // PAGE_NOACCESS
         return dwChar;
     if (dwProtection & PAGE_NOCACHE)

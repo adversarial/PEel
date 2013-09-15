@@ -26,7 +26,6 @@
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe) {
-    unsigned int i;
 
     rpe->pDosHdr = (DOS_HEADER*)pFileBase;
 #if ! ACCEPT_INVALID_SIGNATURES
@@ -47,7 +46,7 @@ LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE
         rpe->ppSectionData = (void**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
             rpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&rpe->pNtHdr->OptionalHeader + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             rpe->ppSectionData[i] = (void*)((PTR)rpe->pDosHdr + rpe->ppSecHdr[i]->PointerToRawData);
         }
@@ -93,7 +92,7 @@ LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe) {
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm) {
-    PTR32 MaxRva;
+    PTR32 MaxRva = 0;
     void* pImage = NULL;
 
     if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxRva)))
@@ -117,8 +116,7 @@ LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODUL
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm) {
-    PTR32 MaxRva;
-    unsigned int i;
+    PTR32 MaxRva = 0;
 
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxRva)))
@@ -139,7 +137,7 @@ LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* 
         vm->PE.ppSectionData = (void**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
             vm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&vm->PE.pNtHdr->OptionalHeader + vm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(vm->PE.ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
             vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress);
@@ -166,7 +164,7 @@ LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* 
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe) {
-    PTR32 MaxPa;
+    PTR32 MaxPa = 0;
     void* pCopy = NULL;
 
     if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxPa)))
@@ -191,7 +189,6 @@ LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe) 
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe) {
     PTR32 MaxPa = 0;
-    unsigned int i;
 
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(MrMaxPa32(rpe, &MaxPa)))
@@ -211,7 +208,7 @@ LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBu
         crpe->ppSectionData = (void**)malloc(crpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (crpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < crpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < crpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
             crpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&crpe->pNtHdr->OptionalHeader + crpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(crpe->ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
             crpe->ppSectionData[i] = (void*)((PTR)crpe->pDosHdr + crpe->ppSecHdr[i]->PointerToRawData);
