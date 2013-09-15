@@ -51,10 +51,10 @@
     <ClInclude Include="virtual32.h">
       <Filter>Mr\virtual</Filter>
     </ClInclude>
-    <ClInclude Include="hlp.h">
+    <ClInclude Include="..\examples\hlp\hlp.h">
       <Filter>Hlp</Filter>
     </ClInclude>
-    <ClInclude Include="kpeb.h">
+    <ClInclude Include="..\examples\hlp\kpeb.h">
       <Filter>Hlp</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,10 +71,10 @@
     <ClCompile Include="virtual32.c">
       <Filter>Mr\virtual</Filter>
     </ClCompile>
-    <ClCompile Include="hlp.c">
+    <ClCompile Include="..\examples\hlp\hlp.c">
       <Filter>Hlp</Filter>
     </ClCompile>
-    <ClCompile Include="kpeb.c">
+    <ClCompile Include="..\examples\hlp\kpeb.c">
       <Filter>Hlp</Filter>
     </ClCompile>
   </ItemGroup>

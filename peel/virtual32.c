@@ -297,55 +297,6 @@ LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* p
 }
 
 /// <summary>
-///	Restores proper header and section protections </summary>
-///
-/// <param name="vpe">
-/// Pointer to VIRTUAL_MODULE32 containing loaded image </param>
-///
-/// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrProtectImage32(INOUT VIRTUAL_MODULE32* vm){ 
-    DWORD dwProt;
-    unsigned int i;
-
-    if (vm->PE.LoadStatus.Protected)
-        return LOGICAL_TRUE;
-
-    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProt))
-        return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
-        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppSecHdr[i]->Misc.VirtualSize, vm->PE.pNtHdr->OptionalHeader.SectionAlignment), MrSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics), &dwProt))
-            return LOGICAL_FALSE;
-    }
-    return LOGICAL_TRUE;
-}
-
-
-/// <summary>
-///	Restores PAGE_READWRITE protection to a VIRTUAL_MODULE </summary>
-///
-/// <param name="vpe">
-/// Pointer to VIRTUAL_MODULE32 containing loaded image </param>
-///
-/// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
-    DWORD dwProt;
-    unsigned int i;
-
-    if (!vm->PE.LoadStatus.Protected)
-        return LOGICAL_TRUE;
-
-    if (!VirtualProtect(vm->pBaseAddr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READWRITE, &dwProt))
-        return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
-        if (!VirtualProtect(vm->PE.ppSectionData[i], MrAlignUp32(vm->PE.ppSecHdr[i]->Misc.VirtualSize, vm->PE.pNtHdr->OptionalHeader.SectionAlignment), PAGE_READWRITE, &dwProt))
-            return LOGICAL_FALSE;
-    }
-    return LOGICAL_TRUE;
-}
-
-/// <summary>
 ///	Frees a mapped image that was allocated </summary>
 ///
 /// <param name="vm">
