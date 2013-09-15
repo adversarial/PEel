@@ -16,7 +16,6 @@
     <ClInclude Include="file32.h" />
     <ClInclude Include="peel.h" />
     <ClInclude Include="preproc.h" />
-    <ClInclude Include="raw.h" />
     <ClInclude Include="raw32.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="virtual32.h" />

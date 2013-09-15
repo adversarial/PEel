@@ -42,9 +42,6 @@
     <ClInclude Include="file32.h">
       <Filter>Mr\file</Filter>
     </ClInclude>
-    <ClInclude Include="raw.h">
-      <Filter>Mr\raw</Filter>
-    </ClInclude>
     <ClInclude Include="raw32.h">
       <Filter>Mr\raw</Filter>
     </ClInclude>
