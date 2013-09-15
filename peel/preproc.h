@@ -19,6 +19,8 @@
 
 #include <Windows.h>
 
+#undef TRUE
+#undef FALSE
 #define TRUE  1
 #define FALSE 0
 
@@ -27,7 +29,7 @@
 #	define LOAD_LEGIT						TRUE	// Register module with PEB::LdrList
 #	define SHED_CODECAVES					TRUE	// Shed anything that is hiding in padding (and rich)
 #	define USE_NATIVE_FUNCTIONS				TRUE	// will attempt to use native functions (only windoze)
-#	define NO_CRT							TRUE	// plz use
+#	define NO_CRT							FALSE	// plz use
 #	define ACCEPT_INVALID_SIGNATURES		TRUE	// ignore magic and checksums
 
 #	define MAX_DBG_STRING_LEN				0x100	// max strlen
@@ -88,9 +90,11 @@ static char szWatermark[] = "PEel v0.1 by karmabis"; // please don't remove, it'
 #		undef realloc
 #		undef free
 
-#		define malloc(cbSize) HeapAlloc(GetProcessHeap(), 0, (cbSize))
-#		define calloc(iNum, cbSize) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (iNum * cbSize))
-#		define realloc(pMem, cbNewSize) HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (pMem), (cbNewSize))
-#		define free(pMem) HeapFree(GetProcessHeap(), 0, (pMem))
-#	endif
+#       ifdef WIN32
+#		    define malloc(cbSize) HeapAlloc(GetProcessHeap(), 0, (cbSize))
+#		    define calloc(iNum, cbSize) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (iNum * cbSize))
+#		    define realloc(pMem, cbNewSize) HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (pMem), (cbNewSize))
+#		    define free(pMem) HeapFree(GetProcessHeap(), 0, (pMem))
+#	    endif
+#   endif
 #pragma endregion
