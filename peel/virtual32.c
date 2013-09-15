@@ -73,7 +73,6 @@ LOGICAL EXPORT LIBCALL MrUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIRTUAL_MODULE32* vm) {
-    unsigned int i;
     
     // leave other members alone (name needs to be set externally)
     memset(&vm->PE, 0, sizeof(RAW_PE32));
@@ -100,7 +99,7 @@ LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIR
         vm->PE.ppSectionData = (void**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
             vm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&vm->PE.pNtHdr->OptionalHeader + vm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + (sizeof(SECTION_HEADER) * i));
             vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress);
         }
@@ -124,8 +123,8 @@ LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIR
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL MrDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
-    VIRTUAL_MODULE32 *vmNext,
-                     *vmPrev;
+    VIRTUAL_MODULE32 *vmNext = NULL,
+                     *vmPrev = NULL;
     
     if (!vm->PE.LoadStatus.Attached)
         return LOGICAL_FALSE;
@@ -157,7 +156,7 @@ LOGICAL EXPORT LIBCALL MrDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE32* rpe) {
-    PTR32 MaxPa;
+    PTR32 MaxPa = 0;
     void* pImage = NULL;
 
     if (!LOGICAL_SUCCESS(MrMaxPa32(&vm->PE, &MaxPa)))
@@ -181,8 +180,7 @@ LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT RAW_PE32* rpe) {
-    PTR32 MaxPa;
-    unsigned int i;
+    PTR32 MaxPa = 0;
     
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(MrMaxPa32(&vm->PE, &MaxPa)))
@@ -202,7 +200,7 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
         rpe->ppSectionData = (void**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
             rpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&rpe->pNtHdr->OptionalHeader + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(rpe->ppSecHdr[i], vm->PE.ppSecHdr[i], sizeof(SECTION_HEADER));
             rpe->ppSectionData[i] = (void*)((PTR)rpe->pDosHdr + rpe->ppSecHdr[i]->PointerToRawData);
@@ -230,7 +228,7 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE32* cvm) {
-    PTR32 MaxPa;
+    PTR32 MaxPa = 0;
     void* pCopy = NULL;
 
     if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
@@ -256,7 +254,6 @@ LOGICAL EXPORT LIBCALL MrCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
 LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE32* cvm) {
     PTR32 MaxPa = 0;
-    unsigned int i;
 
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
@@ -277,7 +274,7 @@ LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* p
         cvm->PE.ppSectionData = (void**)malloc(cvm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
         if (cvm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (i = 0; i < cvm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < cvm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
             cvm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&cvm->PE.pNtHdr->OptionalHeader + cvm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(cvm->PE.ppSecHdr[i], vm->PE.ppSecHdr[i], sizeof(SECTION_HEADER));
             cvm->PE.ppSectionData[i] = (void*)((PTR)cvm->pBaseAddr + cvm->PE.ppSecHdr[i]->VirtualAddress);
@@ -305,8 +302,8 @@ LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* p
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
 LOGICAL EXPORT LIBCALL MrFreeImage32(INOUT VIRTUAL_MODULE32* vm) {
-    VIRTUAL_MODULE32 *vmNext,
-                     *vmPrev;
+    VIRTUAL_MODULE32 *vmNext = NULL,
+                     *vmPrev = NULL;
     
     if (vm->PE.LoadStatus.Attached == TRUE)
         return LOGICAL_FALSE;
