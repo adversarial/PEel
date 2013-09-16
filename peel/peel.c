@@ -24,7 +24,7 @@
     ///
     /// <returns>
     /// None </returns>
-    LOGICAL CDECL MrDebugOut(IN const TCHAR* tzFormat, ...) {
+    LOGICAL CDECL PlDebugOut(IN const TCHAR* tzFormat, ...) {
         TCHAR tzMsg[MAX_DBG_STRING_LEN];
         va_list vaList = NULL;
 
@@ -46,7 +46,7 @@
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR32 EXPORT LIBCALL MrAlignUp32(IN const PTR32 offset, IN const PTR32 alignment) {
+PTR32 EXPORT LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment) {
     if (!alignment)
         return offset;
     return (offset + alignment - 1) & -(alignment);
@@ -62,7 +62,7 @@ PTR32 EXPORT LIBCALL MrAlignUp32(IN const PTR32 offset, IN const PTR32 alignment
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignment) {
+PTR32 EXPORT LIBCALL PlAlignDown32(IN const PTR32 offset, IN const PTR32 alignment) {
     if (!alignment)
         return offset;
     return (offset & -(alignment));
@@ -78,7 +78,7 @@ PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignme
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment) {
+PTR64 EXPORT LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment) {
     if (!alignment)
         return offset;
     return (offset + alignment - 1) & -(alignment);
@@ -94,7 +94,7 @@ PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignment) {
+PTR64 EXPORT LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment) {
     if (!alignment)
         return offset;
     return (offset & -(alignment));
@@ -109,7 +109,7 @@ PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignme
 ///
 /// <returns>
 /// Page protection for use with VirtualProtect </returns>
-DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics) {
+DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics) {
     DWORD dwProtect = dwCharacteristics;
     
     if (dwProtect & IMAGE_SCN_CNT_CODE)
@@ -153,7 +153,7 @@ DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics)
 ///
 /// <returns>
 /// Characteristics for use in section header </returns>
-DWORD EXPORT LIBCALL MrPageToSectionProtection(IN const DWORD dwProtection) {
+DWORD EXPORT LIBCALL PlPageToSectionProtection(IN const DWORD dwProtection) {
     DWORD dwChar = 0;
 
     if (dwProtection & PAGE_NOACCESS) // PAGE_NOACCESS

@@ -1,5 +1,0 @@
-Windows loader may break loop and go to next page after an IMAGE_REL_BASED_ABSOLUTE is encountered.
-
-anti-dumping, PEel will relocate anything after a false padding whereas windows loader will not.
-
-poc: relocating a PE image by disassembling and guessing any movs that reference a 4byte address (check if addr is in module). Still extremely buggy

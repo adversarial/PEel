@@ -25,7 +25,7 @@
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL PlAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe) {
 
     rpe->pDosHdr = (DOS_HEADER*)pFileBase;
 #if ! ACCEPT_INVALID_SIGNATURES
@@ -69,7 +69,7 @@ LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE/memory error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL PlDetachFile32(INOUT RAW_PE32* rpe) {
     if (!rpe->LoadStatus.Attached)
         return LOGICAL_FALSE;
     if (rpe->ppSecHdr != NULL)
@@ -91,16 +91,16 @@ LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe) {
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm) {
     PTR32 MaxRva = 0;
     void* pImage = NULL;
 
-    if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxRva)))
+    if (!LOGICAL_SUCCESS(PlMaxRva32(rpe, &MaxRva)))
         return LOGICAL_FALSE;
     pImage = VirtualAlloc(NULL, MaxRva, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pImage == NULL)
         return LOGICAL_MAYBE;
-    return MrFileToImage32Ex(rpe, (void*)pImage, vm);
+    return PlFileToImage32Ex(rpe, (void*)pImage, vm);
 }
 
 /// <summary>
@@ -109,17 +109,17 @@ LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODUL
 /// <param name="rpe">
 /// Pointer to RAW_PE32 containing file </param>
 /// <param name="pBuffer">
-/// Pointer to a buffer of at least MrMaxRva32(rpe,) bytes with at least PAGE_READWRITE access
+/// Pointer to a buffer of at least PlMaxRva32(rpe,) bytes with at least PAGE_READWRITE access
 /// <param name="vm">
 /// Pointer to VIRTUAL_MODULE32 struct to recieve </param>
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm) {
     PTR32 MaxRva = 0;
 
     // unnecessary per standard, but let's play nice with gaps
-    if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxRva)))
+    if (!LOGICAL_SUCCESS(PlMaxRva32(rpe, &MaxRva)))
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxRva);
 
@@ -163,16 +163,16 @@ LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* 
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe) {
+LOGICAL EXPORT LIBCALL PlCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe) {
     PTR32 MaxPa = 0;
     void* pCopy = NULL;
 
-    if (!LOGICAL_SUCCESS(MrMaxRva32(rpe, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxRva32(rpe, &MaxPa)))
         return LOGICAL_FALSE;
     pCopy = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pCopy == NULL)
         return LOGICAL_MAYBE;
-    return MrCopyFile32Ex(rpe, (void*)pCopy, crpe);
+    return PlCopyFile32Ex(rpe, (void*)pCopy, crpe);
 }
 
 /// <summary>
@@ -181,17 +181,17 @@ LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe) 
 /// <param name="rpe">
 /// Pointer to RAW_PE32 containing file </param>
 /// <param name="pBuffer">
-/// Pointer to a buffer of at least MrMaxPa32(rpe,) bytes with at least PAGE_READWRITE access
+/// Pointer to a buffer of at least PlMaxPa32(rpe,) bytes with at least PAGE_READWRITE access
 /// <param name="crpe">
 /// Pointer to RAW_PE32 that will recieve copy info </param>
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe) {
+LOGICAL EXPORT LIBCALL PlCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe) {
     PTR32 MaxPa = 0;
 
     // unnecessary per standard, but let's play nice with gaps
-    if (!LOGICAL_SUCCESS(MrMaxPa32(rpe, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxPa32(rpe, &MaxPa)))
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxPa);
 
@@ -232,7 +232,7 @@ LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBu
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
-LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL PlFreeFile32(INOUT RAW_PE32* rpe) {
     if (rpe->LoadStatus.Attached == TRUE)
         return LOGICAL_FALSE;
 
