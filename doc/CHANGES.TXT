@@ -2,7 +2,16 @@ PEel changelog:
 
 SEE ..\README.RTF
 
-0.1 : (8/16-9/16):
+TODO:
+	Resource enumerating
+	x64 support
+
+1.0 : 9/16
+	Documentation!
+	Everything appears to be working
+	PlXxx namespace reflects official release
+
+0.1 : 8/15:
 	Import enumerating
 	Export enumerating
 	Relocating

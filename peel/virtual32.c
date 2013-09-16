@@ -23,14 +23,14 @@
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrProtectImage32(INOUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlProtectImage32(INOUT VIRTUAL_MODULE32* vm) {
     DWORD        dwProtect = 0;
     unsigned int i;
 
     if (!VirtualProtect(vm->PE.pDosHdr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProtect))
         return LOGICAL_FALSE;
     for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
-        dwProtect = MrSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics);
+        dwProtect = PlSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics);
         // virtualsize will be rounded up to page size, although we could align to SectionAlignment on our own
         if (!VirtualProtect((LPVOID)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress), vm->PE.ppSecHdr[i]->Misc.VirtualSize, dwProtect, &dwProtect))
             return LOGICAL_FALSE;
@@ -47,7 +47,7 @@ LOGICAL EXPORT LIBCALL MrProtectImage32(INOUT VIRTUAL_MODULE32* vm) {
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
     DWORD        dwProtect = 0;
     unsigned int i;
 
@@ -72,7 +72,7 @@ LOGICAL EXPORT LIBCALL MrUnprotectImage32(INOUT VIRTUAL_MODULE32* vm) {
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlAttachImage32(IN const void* const pModuleBase, OUT VIRTUAL_MODULE32* vm) {
     
     // leave other members alone (name needs to be set externally)
     memset(&vm->PE, 0, sizeof(RAW_PE32));
@@ -122,7 +122,7 @@ LOGICAL EXPORT LIBCALL MrAttachImage32(IN const void* const pModuleBase, OUT VIR
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL MrDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
     VIRTUAL_MODULE32 *vmNext = NULL,
                      *vmPrev = NULL;
     
@@ -155,16 +155,16 @@ LOGICAL EXPORT LIBCALL MrDetachImage32(INOUT VIRTUAL_MODULE32* vm) {
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL PlImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE32* rpe) {
     PTR32 MaxPa = 0;
     void* pImage = NULL;
 
-    if (!LOGICAL_SUCCESS(MrMaxPa32(&vm->PE, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxPa32(&vm->PE, &MaxPa)))
         return LOGICAL_FALSE;
     pImage = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pImage == NULL)
         return LOGICAL_MAYBE;
-    return MrImageToFile32Ex(vm, pImage, rpe);
+    return PlImageToFile32Ex(vm, pImage, rpe);
 }
 
 /// <summary>
@@ -173,17 +173,17 @@ LOGICAL EXPORT LIBCALL MrImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE
 /// <param name="vpe">
 /// Pointer to VIRTUAL_MODULE32 containing loaded image </param>
 /// <param name="pImageBuffer">
-/// Buffer of at least MrMaxPa32(&vm->Pe,) size with at least PAGE_READWRITE attributes
+/// Buffer of at least PlMaxPa32(&vm->Pe,) size with at least PAGE_READWRITE attributes
 /// <param name="rpe">
 /// Pointer to RAW_PE32 struct </param>
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT RAW_PE32* rpe) {
+LOGICAL EXPORT LIBCALL PlImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT RAW_PE32* rpe) {
     PTR32 MaxPa = 0;
     
     // unnecessary per standard, but let's play nice with gaps
-    if (!LOGICAL_SUCCESS(MrMaxPa32(&vm->PE, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxPa32(&vm->PE, &MaxPa)))
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxPa);
     
@@ -227,16 +227,16 @@ LOGICAL EXPORT LIBCALL MrImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE32* cvm) {
+LOGICAL EXPORT LIBCALL PlCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE32* cvm) {
     PTR32 MaxPa = 0;
     void* pCopy = NULL;
 
-    if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxRva32(&vm->PE, &MaxPa)))
         return LOGICAL_FALSE;
     pCopy = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pCopy == NULL)
         return LOGICAL_MAYBE;
-    return MrCopyImage32Ex(vm, (void*)pCopy, cvm);
+    return PlCopyImage32Ex(vm, (void*)pCopy, cvm);
 }
 
 /// <summary>
@@ -246,17 +246,17 @@ LOGICAL EXPORT LIBCALL MrCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE
 /// <param name="rpe">
 /// Pointer to VIRTUAL_MODULE32 containing image </param>
 /// <param name="pBuffer">
-/// Pointer to a buffer of at least MrMaxRva32(rpe,) bytes with at least PAGE_READWRITE access
+/// Pointer to a buffer of at least PlMaxRva32(rpe,) bytes with at least PAGE_READWRITE access
 /// <param name="crpe">
 /// Pointer to VIRTUAL_MODULE32 that will recieve copy info </param>
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE32* cvm) {
+LOGICAL EXPORT LIBCALL PlCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE32* cvm) {
     PTR32 MaxPa = 0;
 
     // unnecessary per standard, but let's play nice with gaps
-    if (!LOGICAL_SUCCESS(MrMaxRva32(&vm->PE, &MaxPa)))
+    if (!LOGICAL_SUCCESS(PlMaxRva32(&vm->PE, &MaxPa)))
         return LOGICAL_FALSE;
     memset((void*)pBuffer, 0, MaxPa);
 
@@ -301,7 +301,7 @@ LOGICAL EXPORT LIBCALL MrCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* p
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
-LOGICAL EXPORT LIBCALL MrFreeImage32(INOUT VIRTUAL_MODULE32* vm) {
+LOGICAL EXPORT LIBCALL PlFreeImage32(INOUT VIRTUAL_MODULE32* vm) {
     VIRTUAL_MODULE32 *vmNext = NULL,
                      *vmPrev = NULL;
     

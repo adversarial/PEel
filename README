@@ -14,12 +14,17 @@ You can find source code in the peel/ directory, and sample
 implementations in the examples/ directory. See the doc/ directory
 for more info.
 
-  > handbook.rtf  -- guide to PEel usage
+  > handbook.rtf  -- a simple demonstration on how to load a PE
+
+  > reference.rtf -- API reference for PEel
   
   > PEel_public.h -- header file to include in projects
   
-  > LICENSE.TXT   -- open source, LGPL license
-  > CHANGES.TXT	  -- detailed changelog
+  > LICENSE.TXT   -- open source, LGPLv3 license
+  > CHANGES.TXT	  -- changelog
+  
+  > examples/hello world -- example loading of a PE (non-recursive
+							import handling).
 
 Project hosted at http://github.com/x8esix/PEel/
 

@@ -18,14 +18,14 @@
 #include "peel.h"
 
 #pragma region File functions
-    LOGICAL EXPORT LIBCALL MrAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe);
-    LOGICAL EXPORT LIBCALL MrDetachFile32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlDetachFile32(INOUT RAW_PE32* rpe);
 
-    LOGICAL EXPORT LIBCALL MrFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
-    LOGICAL EXPORT LIBCALL MrFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm);
+    LOGICAL EXPORT LIBCALL PlFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
+    LOGICAL EXPORT LIBCALL PlFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm);
     
-    LOGICAL EXPORT LIBCALL MrCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
-    LOGICAL EXPORT LIBCALL MrCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
+    LOGICAL EXPORT LIBCALL PlCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
+    LOGICAL EXPORT LIBCALL PlCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
 
-    LOGICAL EXPORT LIBCALL MrFreeFile32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlFreeFile32(INOUT RAW_PE32* rpe);
 #pragma endregion

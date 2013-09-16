@@ -1,5 +1,5 @@
-{\rtf1\ansi\ansicpg1252\deff0\deflang1033\deflangfe1033{\fonttbl{\f0\fswiss\fprq2\fcharset0 Calibri;}{\f1\fnil\fcharset0 Calibri;}{\f2\fmodern\fprq1\fcharset0 Consolas;}{\f3\fnil\fcharset0 Consolas;}{\f4\fnil Consolas;}{\f5\fnil\fcharset2 Symbol;}}
-{\colortbl ;\red156\green22\blue22;\red0\green0\blue255;}
+{\rtf1\ansi\ansicpg1252\deff0\deflang1033\deflangfe1033{\fonttbl{\f0\fswiss\fprq2\fcharset0 Calibri;}{\f1\fnil\fcharset0 Calibri;}{\f2\fmodern\fprq1\fcharset0 Consolas;}{\f3\fnil Consolas;}{\f4\fnil\fcharset0 Consolas;}}
+{\colortbl ;\red0\green128\blue0;\red0\green0\blue255;}
 {\*\generator Msftedit 5.41.21.2510;}\viewkind4\uc1\pard\nowidctlpar\sl276\slmult1\qc\lang9\b\f0\fs36 PEel\par
 \b0\i\fs14 a PE editing library\b\i0\fs36\par
 \b0\i\fs28 by x8esix\par
@@ -5054,29 +5054,305 @@ adff29b5ff10adff10adff109cff4aadf7add6f7ffffffffffff040000002701ffff0300000000
 }\i\f0\fs28\par
 \pard\nowidctlpar\sl276\slmult1\ul\b\i0\par
 \par
-Loading a PE file:\par
+Glossary:\par
+\ulnone\b0\fs22\par
+Codecave\tab - Empty area usually due to padding and alignment, typically filled with 0s\par
+EAT\tab\tab - Export Address Table\par
+IAT\tab\tab - Import Address Table\par
+IDH\tab\tab - IMAGE_DOS_HEADER\par
+IDS\tab\tab - IMAGE_DOS_STUB\par
+INH\tab\tab - IMAGE_NT_HEADERS\par
+ISH\tab\tab - IMAGE_SECTION_HEADER\par
+Module\tab - Image aligned PE\par
+Pa\tab\tab - physical address or file offset\par
+Rva\tab\tab - virtual address relative to module base\par
+Va\tab\tab - virtual address\par
 \par
-\ulnone\b0\fs22 See examples/hello world/ for an example of a simple loader.\par
+\ul\b\fs28 Structs:\par
+\ulnone\b0\fs22\par
+\b RAW_PE:\par
+\b0 Wraps a PE file and provides pointers to common structures for easy access. Alignment does not matter on any function with a RAW_PE parameter. \par
 \par
-To load a PE file from a file, several things must be accomplished: (Non-Windows specific things):\par
+\cf1\f2\fs19 // However anything involving headers or gaps in padding outside of sections will \cf0\par
+\cf1 // produce errors if you have the data structures heap allocated or otherwise \cf0\par
+\cf1 // randomly sprawled about.\cf0\f0\fs22\par
 \par
-\tab 0. You can take care of a few things to make loading easier:\par
+\cf2\f2\fs19\tab typedef\cf0  \cf2 struct\cf0  \{\par
+\lang1033\tab\tab\lang9 DOS_HEADER\tab\lang1033   \lang9 *pIDH;\par
+\tab        DOS_STUB\tab\lang1033   \lang9 *pIDS;\par
+\tab        NT_HEADERS\tab\lang1033   \lang9 *pINH;\par
+\tab        SECTION_HEADER **ppISH;\par
+\tab        \cf2 void\cf0\tab\lang1033         \lang9 **ppSectionData;\par
+\tab        CODECAVE_LIST\lang1033   \lang9  *pCaveData;\par
+\tab        IMPORT_LIBRARY  *pIL\lang1033 ;\lang9\par
+\tab        PE_FLAGS\lang1033          \lang9 dwFlags;\par
+\tab\} RAW_PE;\par
+\f0\fs22\par
+\b VIRTUAL_MODULE:\par
+\b0 Wraps a loaded image in a RAW_PE and provides a linked list of loaded modules. cName holds a module name that is usable as an identifier, and is used in HlpXxx functions that search the VIRTUAL_MODULE list, such as loading.\par
 \par
-\pard{\pntext\f5\'B7\tab}{\*\pn\pnlvlblt\pnf5\pnindent0{\pntxtb\'B7}}\nowidctlpar\fi-360\li720\sl276\slmult1 OPTIONAL_HEADER::SizeOfStackCommit and OPTIONAL_HEADER::SizeOfStackReserve should be adjusted to allow for the additional stack space of the PE to be loaded.\par
-{\pntext\f5\'B7\tab}OPTIONAL_HEADER::SizeOfHeapCommit and OPTIONAL_HEADER::SizeOfHeapReserve should be adjusted to allow for the structures that will be used during loading, along with the additional heap space of the PE to be loaded.\par
-{\pntext\f5\'B7\tab}The PE to be loaded should be checked for a .reloc section, and the OPTIONAL_HEADER::DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC] should be checked to be non-NULL. If there are no relocations, make sure to change your OPTIONAL_HEADER::ImageBase on linking so that you will not have conflicting modules.\par
-{\pntext\f5\'B7\tab}Checking if OPTIONAL_HEADER::DllCharacteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT is set.\par
-\pard\nowidctlpar\sl276\slmult1\par
-\tab 1. The PE must be converted from file to image alignment. File alignment, which is much more compact, is converted to (usually) page aligned sections. \cf1 file.* \cf0 provides \f2\fs19 PlFileToImage\f0\fs22  which handles these conversions and maps the file correctly. \par
+\pard\nowidctlpar\cf2\lang1033\f2\fs19\tab typedef\cf0  \cf2 struct\cf0  \{\par
+\pard\nowidctlpar\fi720\tab RAW_PE\tab  \tab  PE;\par
+\cf2\tab void\cf0\tab    \tab *Flink,\par
+\pard\nowidctlpar\fi720\li1440\tab *Blink;\par
+\pard\nowidctlpar\fi720\cf2\tab char\cf0\tab\tab  cName[8];\cf1\par
+\cf2\tab void\cf0 *\tab\tab  pBaseAddr;\par
+\pard\nowidctlpar\tab\} VIRTUAL_MODULE;\par
+\pard\nowidctlpar\sl276\slmult1\lang9\f0\fs22\par
+\ul\b\fs32 Functions:\fs28\par
+\fs24\par
+\fs28 Return Values:\fs24\par
 \par
-\tab 2. Code that references non-relative memory (ie \cf2\lang1033\f3\fs19 static \cf0\lang9\f0\fs22 variables or pre-initialized data) must be corrected. \cf1 raw.*\cf0  provides a function, \lang1033\f3\fs19 PlRelocate\lang9\f0\fs22 , which allows you perform relocations.\par
+\ulnone\b0\fs22 All functions that return a LOGICAL result have the same meanings:\par
+\ul\b\fs24\par
+\ulnone\fs22 LOGICAL_TRUE:\par
+\tab\b0 The function completed successfully.\b\par
+LOGICAL_FALSE:\par
+\tab\b0 The function did not complete successfully, most likely due to an invalid field/pointer.\b\par
+LOGICAL_MAYBE:\par
+\b0\tab The function did not complete successfully due to an external CRT/memory allocation error.\ul\b\fs24\par
+\fs28\par
+Attaching to a PE:\par
+\ulnone\b0\fs22\par
+\b PlAttachFile:\par
 \par
-\tab 3. Imports must be resolved. \cf1 raw.*\cf0  provides a helper function, \f4\fs19 PlEnumerateImports\lang1033\f3 , \lang9\f0\fs22 but leaves the actual importing to you (see \cf1 hlp.*\cf0  for an implementation). \f4\fs19 PlEnumerateImports\f0\fs22  provides easily searchable access and pointers to the IAT entries for each function, simply dereference \lang1033\f3\fs19 ::dwItemPtr\lang9\f0\fs22  to edit the IAT entry.\par
+\lang1033\b0\f2\fs19\tab\lang9 LOGICAL LIBCALL PlAttach\lang1033 File\lang9 (\par
+\lang1033\tab\tab\lang9 IN \cf2 const\cf0  \cf2 void\cf0 * \cf2 const\cf0  pFileBase, \par
+\lang1033\tab\tab\lang9 OUT RAW_PE* rpe\par
+\lang1033\tab\lang9 );\f0\fs22\par
 \par
-\tab 4. The image must be protected with the correct protection constants. In a non-DOS environment, the headers are protected with read only attributes, and each SECTION_HEADER specifies the protection that should be applied. \cf1 peel.*\cf0  provides \f4\fs19 PlSectionToPageProtection\lang1033\f3  \lang9\f0\fs22 allows easy conversion of these protections, however \f4\fs19 PlProtectImage\f0\fs22  in \cf1 raw.*\cf0  is an easier solution that will handle the image and conversions automatically. These conversions use the Windows memory protection constants; they are not guaranteed to work on any other system. See \cf1 MEMORY_PROTECTION.TXT\cf0  for a visual representation of the conversion.\par
+Attaches to a file that is stored as an array in memory. pFileBase should point to the DOS_HEADER. Only the DOS_HEADER*, DOS_STUB*, NT_HEADERS*, SECTION_HEADERS*, PE_FLAGS, and section data pointers will be filled. Will also set PE_FLAGS::Attached to TRUE.\par
 \par
-\tab 6. If OPTIONAL_HEADER::AddressOfEntryPoint is not NULL, then the entry point should be called. And loading is done!\par
+\b PlAttachImage:\b0\par
 \par
-\tab\b [Windows specific] \b0 The module must be registered with the Process Environment Block, which will also enable TLS support. However, due to Window's security features, SEH cannot be called on a page that does not have the SEC_IMAGE attribute set. \lang1033\f3\fs19 HlpLoadAndBurn\lang9\f0\fs22  attempts to fix this problem by first using LoadLibrary on a system dll file of larger RVA size, as without calling \lang1033\f3\fs19 CreateFileMapping\lang9\f0\fs22 , the SEC_IMAGE attribute cannot be set.\ul\b\fs28\par
+\lang1033\f2\fs19\tab\lang9 LOGICAL LIBCALL PlAttachImage(\par
+\lang1033\tab\tab\lang9 IN \cf2 const\cf0  \cf2 void\cf0 * \cf2 const\cf0  pModuleBase, \par
+\lang1033\tab\tab\lang9 OUT VIRTUAL_MODULE* vm\par
+\lang1033\tab\lang9 );\f0\fs22\par
+\par
+Attaches to a mapped image at pModuleBase. Only the DOS_HEADER*, DOS_STUB*, NT_HEADERS*, SECTION_HEADERS*, PE_FLAGS, and section data pointers will be filled. Will also set PE_FLAGS::Attached to TRUE.\par
+\par
+\par
+\par
+\b PlDetachFile:\par
+\b0\par
+\lang1033\f2\fs19\tab\lang9 LOGICAL LIBCALL PlDetachFile(\par
+\lang1033\tab\tab\lang9 INOUT RAW_PE* rpe\par
+\lang1033\tab\lang9 )\lang1033 ;\par
+\par
+\lang9\f0\fs22 Detaches \f2\fs19 rpe\f0\fs22  and frees memory allocated by PlAttachFile. This function will fail if PE_FLAGS::Attached is not set to TRUE.\par
+\par
+\b PlFreeFile:\b0\par
+\par
+\tab\f2\fs19 LOGICAL LIBCALL PlFreeFile(\par
+\lang1033\tab\tab\lang9 INOUT RAW_PE* rpe\par
+\lang1033\tab\lang9 )\lang1033 ;\lang9\f0\fs22\par
+\par
+Frees \f2\fs19 rpe \f0\fs22 and allocated memory, along with unlinking \f2\fs19 vm\f0\fs22  from the module list. This function will fail if PE_FLAGS::Attached is set to TRUE. This function is meant for \f2\fs19 RAW_PEs \f0\fs22 allocated via  \f2\fs19 PlImageToFile[Ex]\f0\fs22  or \f3\fs19 PlCopyFile\lang1033\f4 [Ex]\lang9\f0\fs22 .\par
+\par
+\b PlDetachImage:\b0\par
+\par
+\tab\f2\fs19 LOGICAL LIBCALL PlDetachImage(\par
+\lang1033\tab\tab\lang9 INOUT VIRTUAL_MODULE* vm\par
+\lang1033\tab\lang9 )\lang1033 ;\lang9\f0\fs22\par
+\par
+Detaches \f2\fs19 vm \f0\fs22 and frees allocated memory, along with unlinking vm from the module list. This function will fail if PE_FLAGS::Attached is not set to TRUE.\par
+\par
+\b PlFreeImage:\b0\par
+\par
+\tab\f2\fs19 LOGICAL LIBCALL PlFreeImage(\par
+\lang1033\tab\tab\lang9 INOUT VIRTUAL_MODULE* vm\par
+\lang1033\tab\lang9 )\lang1033 ;\lang9\f0\fs22\par
+\par
+Frees \f2\fs19 vm \f0\fs22 and allocated memory, along with unlinking \f2\fs19 vm\f0\fs22  from the module list. This function will fail if PE_FLAGS::Attached is set to TRUE. This function is meant for \f2\fs19 VIRTUAL_MODULEs\f0\fs22  allocated via  \f2\fs19 PlFileToImage[Ex]\f0\fs22  or \f3\fs19 PlCopy\lang1033\f4 Image[Ex]\lang9\f0\fs22 .\f2\fs19\par
+\f0\fs22\par
+\ul\b\fs28 Converting alignments:\par
+\ulnone\b0\fs22\par
+\b PlFileToImage:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlFileToImage(\par
+\tab\tab I\f3 N \cf2 const\cf0  RAW_PE* rpe, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT VIRTUAL_MODULE* vm\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts a file-aligned PE to image alignment. To release \f3\fs19 vm\f0\fs22 ,\lang1033\f4\fs19  \lang9\f3 PlFreeImage\lang1033\f4  \lang9\f0\fs22 must be called.\par
+\par
+\b PlFileToImageEx:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlFileToImage(\par
+\tab\tab I\f3 N \cf2 const\cf0  RAW_PE* rpe, \par
+\lang1033\f4\tab\tab\f3 IN \cf2 const\cf0  \cf2 void\cf0 * pBuffer\f4 ,\lang9\f3\par
+\lang1033\f4\tab\tab\lang9\f3 OUT VIRTUAL_MODULE* vm\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts a file-aligned PE to image alignment and allows a buffer for the module to be specified. \lang1033\f3\fs19 pBuffer\f4  \lang9\f0\fs22 must point to a buffer at least \f2\fs19 PlMaxRva(rpe) \f0\fs22 in size. To release \f3\fs19 vm\f0\fs22 ,\lang1033\f4\fs19  \lang9\f3 PlFreeImage\lang1033\f4  \lang9\f0\fs22 must be called.\par
+\par
+\b PlImageToFile:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlImageToFile(\par
+\tab\tab\f3 IN \cf2 const\cf0  VIRTUAL_MODULE* vm, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT RAW_PE* rpe\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts an image-aligned PE to file alignment.  To release \lang1033\f4\fs19 rpe\lang9\f0\fs22 ,\lang1033\f4\fs19  \lang9\f3 PlFree\lang1033\f4 File \lang9\f0\fs22 must be called.\par
+\f2\fs19\par
+\b\f0\fs22 PlImageToFileEx:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlImageToFile32Ex(\par
+\tab\tab\f3 IN \cf2 const\cf0  VIRTUAL_MODULE* vm, \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  \cf2 void\cf0 * pBuffer, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT RAW_PE* rpe\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts an image-aligned PE to file alignment and allows a buffer for the module to be specified. \lang1033\f3\fs19 pBuffer\f4  \lang9\f0\fs22 must point to a buffer at least \f2\fs19 PlMaxPa(&vm->PE) \f0\fs22 in size. To release \lang1033\f4\fs19 rpe\lang9\f0\fs22 ,\lang1033\f4\fs19  \lang9\f3 PlFree\lang1033\f4 File \lang9\f0\fs22 must be called.\f2\fs19\par
+\par
+\b\f0\fs22 PlRvaToPa:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlRvaToPa(\par
+\tab\tab\f3 IN \cf2 const\cf0  RAW_PE* rpe, \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR Rva, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* Pa\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts relative virtual address \f3\fs19 Rva\lang1033\f4  \lang9\f0\fs22 to file offset \f3\fs19 Pa\f0\fs22 .\par
+\par
+\b PlPaToRva:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlPaToRva(\par
+\tab\tab\f3 IN \cf2 const\cf0  RAW_PE* rpe, \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR \lang1033\f4 Pa\lang9\f3 , \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* \lang1033\f4 Rva\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts file offset \f3\fs19 Pa\f0\fs22  to relative virtual address \f3\fs19 Rva\f0\fs22 .\par
+\par
+\b PlRvaToVa:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlRvaToVa(\par
+\tab\tab\f3 IN \cf2 const\cf0  VIRTUAL_MODULE* vm, \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR Rva, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* Va\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts relative virtual address \f3\fs19 Rva\f0\fs22  to virtual address \f3\fs19 Va\f0\fs22 .\par
+\par
+\b PlVaToRva:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlVaToRva(\par
+\tab\tab\f3 IN \cf2 const\cf0  VIRTUAL_MODULE* vm, \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR \lang1033\f4 V\lang9\f3 a, \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* \lang1033\f4 Rv\lang9\f3 a\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts virtual address \f3\fs19 Va\f0\fs22  to relative virtual address \f3\fs19 Rva\f0\fs22 .\par
+\par
+\b PlGetRvaPtr:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlGetRvaPtr(\par
+\tab\tab\f3 IN \cf2 const\cf0  \lang1033\f4 RAW_PE\lang9\f3 * \lang1033\f4 rpe\lang9\f3 , \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR \lang1033\f4 Rva\lang9\f3 , \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* \lang1033\f4 Ptr\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts relative virtual address \f3\fs19 Rva\f0\fs22  to usable pointer \lang1033\f4\fs19 Ptr\lang9\f0\fs22 .\par
+\par
+\b PlGetPaPtr:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL PlGetPaPtr(\par
+\tab\tab\f3 IN \cf2 const\cf0  \lang1033\f4 RAW_PE\lang9\f3 * \lang1033\f4 rpe\lang9\f3 , \par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  PTR \lang1033\f4 Pa\lang9\f3 , \par
+\lang1033\f4\tab\tab\lang9\f3 OUT PTR* \lang1033\f4 Ptr\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts file offset \lang1033\f4\fs19 P\lang9\f3 a\f0\fs22  to usable pointer \lang1033\f4\fs19 Ptr\lang9\f0\fs22 .\par
+\par
+\b PlAlignUp:\par
+\b0\par
+\tab\f2\fs19 PTR LIBCALL PlAlignUp(\par
+\tab\tab\f3 IN \cf2 const\cf0  \lang1033\f4 PTR offset,\par
+\tab\tab IN const PTR alignment\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Aligns \lang1033\f4\fs19 offset \lang9\f0\fs22 to  \lang1033\f4\fs19 alignment\lang9\f0\fs22 , rounding up. \par
+\par
+\b PlAlignDown:\par
+\b0\par
+\tab\f2\fs19 PTR LIBCALL PlAlignDown(\par
+\tab\tab\f3 IN \cf2 const\cf0  \lang1033\f4 PTR offset,\par
+\tab\tab IN const PTR alignment\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Aligns \lang1033\f4\fs19 offset \lang9\f0\fs22 to  \lang1033\f4\fs19 alignment\lang9\f0\fs22 , rounding down. \par
+\par
+\b PlSectionToPageProtection:\par
+\b0\par
+\tab\f2\fs19 DWORD LIBCALL \f3 PlSectionToPageProtection(\par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  DWORD dwCharacteristics\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts a SECTION_HEADER::Characteristics mask to a memory protection constant {\field{\*\fldinst{HYPERLINK "http://msdn.microsoft.com/en-us/library/windows/desktop/aa366786%28v=vs.85%29.aspx"}}{\fldrslt{\ul\cf2 http://msdn.microsoft.com/en-us/library/windows/desktop/aa366786%28v=vs.85%29.aspx}}}\f0\fs22 .\par
+\par
+\b PlPageToSectionProtection:\par
+\b0\par
+\tab\f2\fs19 DWORD LIBCALL PlPageToSectionProtection\f3 (\par
+\lang1033\f4\tab\tab\lang9\f3 IN \cf2 const\cf0  DWORD \lang1033\f4 dwProtection\lang9\f3\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Converts a memory protection constant to a SECTION_HEADER::Characteristics mask.\par
+\par
+\par
+\ul\b\fs28 Loading a PE file:\par
+\ulnone\b0\fs22\par
+\b PlProtectImage:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \f3 PlProtectImage(\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT VIRTUAL_MODULE* vm\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Protects \f3\fs19 vm\lang1033\f4  \lang9\f0\fs22 with proper page protection for execution. \par
+\par
+\b PlUnprotectImage:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \f3 Pl\lang1033\f4 Unp\lang9\f3 rotectImage(\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT VIRTUAL_MODULE* vm\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Protects \f3\fs19 vm\lang1033\f4  \lang9\f0\fs22 with read and write page protection for editing.\par
+\par
+\b PlEnumerateImports:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \f3 PlEnumerateImports(\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT RAW_PE32* rpe\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Enumerates all imports of \f3\fs19 rpe\lang1033\f4  \lang9\f0\fs22 into a forward linked list at \f3\fs19 rpe\lang1033\f4 ->\f3 pImport\lang9\f0\fs22 . \f3\fs19 rpe\lang1033\f4 ->\f3 pImport\f4  \lang9\f0\fs22 contains the first library, and points to the next library to import if \f3\fs19 rpe\lang1033\f4 ->\f3 pImport\f4 .Flink != NULL\lang9\f0\fs22 . The items for each library can be browsed in a similar forward linked list located at \f3\fs19 rpe\lang1033\f4 ->\f3 pImport\f4 .iiImportList \lang9\f0\fs22 and contain a pointer to the import name (\f3\fs19 Name\f0\fs22 ), or if \f3\fs19 Name\f0\fs22  is NULL then \f3\fs19 Ordinal\f0\fs22 .  \f3\fs19 rpe\lang1033\f4 ->\f3 pImport\f4 .iiImportList->dwItemPtr\lang9\f0\fs22  points to the IAT entry of the function, which can be derefenced to get the address of the function. \f3\fs19 Pl\lang1033\f4 Free\lang9\f3 Enumerate\lang1033\f4 d\lang9\f3 Imports\lang1033\f4  \lang9\f0\fs22 must be called to release allocated list memory when done.\par
+\par
+\b PlEnumerateExports:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \f3 PlEnumerate\lang1033\f4 Exports\lang9\f3 (\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT RAW_PE32* rpe\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Enumerates all exports of \f3\fs19 rpe\lang1033\f4  \lang9\f0\fs22 into a forward linked list at \f3\fs19 rpe\lang1033\f4 ->pExport. \lang9\f3 rpe\lang1033\f4 ->pExport.Name \lang9\f0\fs22 contains a pointer to the export name (\f3\fs19 Name\f0\fs22 ), or if \f3\fs19 Name\f0\fs22  is NULL then \f3\fs19 Ordinal\f0\fs22 .  \f3\fs19 rpe\lang1033\f4 ->\f3 p\f4 Ex\f3 port\f4 .dwItemPtr\lang9\f0\fs22  points to the EAT entry of the item, which can be derefenced to get the rva of the item. \f3\fs19 Pl\lang1033\f4 Free\lang9\f3 Enumerate\lang1033\f4 dEx\lang9\f3 ports\lang1033\f4  \lang9\f0\fs22 must be called to release allocated list memory when done.\par
+\par
+\b PlRelocate:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \lang1033\f4 PlRelocate\lang9\f3 (\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT RAW_PE32* rpe\lang1033\f4 ,\par
+\tab\tab\f3 IN \cf2 const\cf0  PTR32 dwOldBase, \par
+\f4\tab\tab\f3 IN \cf2 const\cf0  PTR32 dwNewBase\lang9\par
+\lang1033\f4\tab\lang9\f3 );\par
+\f0\fs22\par
+Performs relocations on \f3\fs19 rpe\f0\fs22 . \lang1033\f3\fs19 dwOldBase\f4  \lang9\f0\fs22 must point to the aligned base (most likely \f3\fs19 rpe\lang1033\f4 ->pNtHeaders->OptionalHeader.BaseAddress\lang9\f0\fs22 ) and \lang1033\f3\fs19 dwNewBase\lang9\f0\fs22  should point to the current base address.\par
+\par
+\b PlCalculateChecksum:\par
+\b0\par
+\tab\f2\fs19 LOGICAL LIBCALL \lang1033\f4 PlCalculateChecksum\lang9\f3 (\par
+\lang1033\f4\tab\tab\lang9\f3 INOUT RAW_PE32* rpe\lang1033\f4 ,\par
+\tab\tab\f3 OUT DWORD* dwChecksum\lang9\f4\par
+\lang1033\tab\lang9\f3 );\par
+\f0\fs22\par
+Calculates the NT checksum of image pointed to by \f3\fs19 rpe\f0\fs22 . Must be able to get read/write protection to zero old checksum, which will be restored on finish. Probably just a coincidence it has the same output as Microsoft's implementation. \par
+\par
 }
  
