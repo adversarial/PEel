@@ -19,37 +19,37 @@
 
 #pragma region File image functions
     // conversions
-    LOGICAL EXPORT LIBCALL MrRvaToPa32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR32* Pa);
-    LOGICAL EXPORT LIBCALL MrPaToRva32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR32* Rva);
+    LOGICAL EXPORT LIBCALL PlRvaToPa32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR32* Pa);
+    LOGICAL EXPORT LIBCALL PlPaToRva32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR32* Rva);
 
     // editing (using RVA because it's the most common I use and easy to convert once loaded)
-    LOGICAL EXPORT LIBCALL MrGetRvaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR* Ptr);
-    LOGICAL EXPORT LIBCALL MrGetPaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR* Ptr);
+    LOGICAL EXPORT LIBCALL PlGetRvaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR* Ptr);
+    LOGICAL EXPORT LIBCALL PlGetPaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR* Ptr);
 
-    LOGICAL EXPORT LIBCALL MrWriteRva32(INOUT RAW_PE32* rpe, IN const PTR32 Rva, IN const void* pData, IN size_t cbData);
-    LOGICAL EXPORT LIBCALL MrReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN size_t cbBufferMax);
-    // these end up calling MrXxxRva32
-    LOGICAL EXPORT LIBCALL MrWritePa32(INOUT RAW_PE32* rpe, IN const PTR32 Pa, IN const void* pData, IN size_t cbData);
-    LOGICAL EXPORT LIBCALL MrReadPa32(IN const RAW_PE32* rpe, IN const PTR32 Pa, IN void* pBuffer, IN size_t cbBufferMax);
+    LOGICAL EXPORT LIBCALL PlWriteRva32(INOUT RAW_PE32* rpe, IN const PTR32 Rva, IN const void* pData, IN size_t cbData);
+    LOGICAL EXPORT LIBCALL PlReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN size_t cbBufferMax);
+    // these end up calling PlXxxRva32
+    LOGICAL EXPORT LIBCALL PlWritePa32(INOUT RAW_PE32* rpe, IN const PTR32 Pa, IN const void* pData, IN size_t cbData);
+    LOGICAL EXPORT LIBCALL PlReadPa32(IN const RAW_PE32* rpe, IN const PTR32 Pa, IN void* pBuffer, IN size_t cbBufferMax);
 
     // virtual to rva... come on, guys?
-    LOGICAL EXPORT LIBCALL MrRvaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Rva, OUT PTR32* Va);
-    LOGICAL EXPORT LIBCALL MrPaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Pa, OUT PTR32* Va);
+    LOGICAL EXPORT LIBCALL PlRvaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Rva, OUT PTR32* Va);
+    LOGICAL EXPORT LIBCALL PlPaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Pa, OUT PTR32* Va);
 
     // fact checking?
-    LOGICAL EXPORT LIBCALL MrMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa);
-    LOGICAL EXPORT LIBCALL MrMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva);
+    LOGICAL EXPORT LIBCALL PlMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa);
+    LOGICAL EXPORT LIBCALL PlMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva);
     
     // imports/exports
-    LOGICAL EXPORT LIBCALL MrEnumerateImports32(INOUT RAW_PE32* rpe);
-    LOGICAL EXPORT LIBCALL MrFreeEnumeratedImports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlEnumerateImports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlFreeEnumeratedImports32(INOUT RAW_PE32* rpe);
 
-    LOGICAL EXPORT LIBCALL MrEnumerateExports32(INOUT RAW_PE32* rpe);
-    LOGICAL EXPORT LIBCALL MrFreeEnumeratedExports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlEnumerateExports32(INOUT RAW_PE32* rpe);
+    LOGICAL EXPORT LIBCALL PlFreeEnumeratedExports32(INOUT RAW_PE32* rpe);
 
-//    LOGICAL EXPORT LIBCALL MrEnumerateResources32(INOUT RAW_PE32* rpe);
+//    LOGICAL EXPORT LIBCALL PlEnumerateResources32(INOUT RAW_PE32* rpe);
 
-    LOGICAL EXPORT LIBCALL MrRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBase, IN const PTR32 dwNewBase);
+    LOGICAL EXPORT LIBCALL PlRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBase, IN const PTR32 dwNewBase);
     
-    LOGICAL EXPORT LIBCALL MrCalculateChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum);
+    LOGICAL EXPORT LIBCALL PlCalculateChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum);
 #pragma endregion

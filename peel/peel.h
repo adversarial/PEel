@@ -58,7 +58,7 @@ X = done
 
 Additional notes:
     Function namespace styling:
-        MrXxx  - 
+        PlXxx  - 
             low level functions that control individual aspects or generally useful snips
         HlpXxx -
             high level functions to abstract loading
@@ -212,8 +212,8 @@ Additional notes:
 #	ifdef DEBUGMODE
 #		include <stdio.h>
 #		include <tchar.h>
-#		define dmsg	MrDebugOut
-        LOGICAL CDECL MrDebugOut(IN const TCHAR* tzFormat, ...);
+#		define dmsg	PlDebugOut
+        LOGICAL CDECL PlDebugOut(IN const TCHAR* tzFormat, ...);
 #	else
 #		define dmsg(msg, ...)
 #	endif
@@ -221,14 +221,14 @@ Additional notes:
 
 #pragma region Basic Mode Prototypes
     // alignment & such
-    PTR32 EXPORT LIBCALL MrAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
-    PTR32 EXPORT LIBCALL MrAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
+    PTR32 EXPORT LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
+    PTR32 EXPORT LIBCALL PlAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
     
-    PTR64 EXPORT LIBCALL MrAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
-    PTR64 EXPORT LIBCALL MrAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
+    PTR64 EXPORT LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
+    PTR64 EXPORT LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
     // conversions
-    DWORD EXPORT LIBCALL MrSectionToPageProtection(IN const DWORD dwCharacteristics);
-    DWORD EXPORT LIBCALL MrPageToSectionProtection(IN const DWORD dwProtection);
+    DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics);
+    DWORD EXPORT LIBCALL PlPageToSectionProtection(IN const DWORD dwProtection);
 #pragma endregion
 
 #pragma region Macros

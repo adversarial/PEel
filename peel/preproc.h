@@ -48,9 +48,11 @@
 #pragma endregion
 
 #pragma region Environment
-#	ifndef NDEBUG
-#	define DEBUGMODE						TRUE
-#	endif
+#   ifdef _MSC_VER
+#       ifndef NDEBUG
+#	    define DEBUGMODE						TRUE
+#	    endif
+#   endif
 #	ifdef _DLL
 #		define EXPORT_FUNCTIONS_SUPPORTED	TRUE
 #	else
@@ -71,7 +73,7 @@
 
 #pragma region Private
 // Watermark
-static char szWatermark[] = "PEel v0.1 by karmabis"; // please don't remove, it's 22 bytes
+static char szWatermark[] = "PEel v1.0 by x8esix"; // please don't remove, it's 22 bytes
 // Commentary
 #	define IN			// usu const
 #	define OUT			// ptr content will be modified
@@ -85,16 +87,16 @@ static char szWatermark[] = "PEel v0.1 by karmabis"; // please don't remove, it'
 #	endif
 // Custom CRT in milk
 #	if NO_CRT || USE_NATIVE_FUNCTIONS
-#		undef malloc
-#		undef calloc
-#		undef realloc
-#		undef free
+#       ifdef BUILDING_FOR_THE_WIN
+#		    undef malloc
+#		    undef calloc
+#		    undef realloc
+#		    undef free
 
-#       ifdef WIN32
 #		    define malloc(cbSize) HeapAlloc(GetProcessHeap(), 0, (cbSize))
 #		    define calloc(iNum, cbSize) HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (iNum * cbSize))
 #		    define realloc(pMem, cbNewSize) HeapReAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, (pMem), (cbNewSize))
 #		    define free(pMem) HeapFree(GetProcessHeap(), 0, (pMem))
-#	    endif
+#       endif
 #   endif
 #pragma endregion
