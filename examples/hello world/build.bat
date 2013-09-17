@@ -1,5 +1,5 @@
 :: build script for hello world PE loader
 
-gcc -c -masm=intel helloworld.c -std=c99 -static -O2
-gcc -o helloworld.exe helloworld.o ..\..\Release\PEel.lib
+gcc -c helloworld.c -Os -s -std=c99
+gcc -o helloworld.exe helloworld.o ..\..\Release\PEel.lib -Os -s
 del helloworld.o
