@@ -58,12 +58,15 @@ int main(int argc, char* argv[]) {
             printf("\nImage does not have an entry point...");
 
     }
+    printf("\nIf we reached here then our loaded file did not call exit()");
     for (IMPORT_LIBRARY32* pIL = vm.PE.pImport; pIL != NULL; pIL = (IMPORT_LIBRARY32*)pIL->Flink) {
         if (GetModuleHandleA(pIL->Library) != NULL) 
             FreeLibrary(GetModuleHandleA(pIL->Library));
     }
-
+    printf("\nUnprotecting image!");
     PlUnprotectImage32(&vm);
     PlFreeEnumeratedImports32(&vm.PE);
     PlFreeImage32(&vm);
+    printf("\nWe're done!");
+    return 0;
 }
