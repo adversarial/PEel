@@ -15,7 +15,7 @@ set objects=
 
 cd .\peel\
 
-     FOR %%i in (*.c) DO (call :concat %%i & gcc -c %%i -std=c99 -O2 -pedantic & ECHO Compiling %%i)
+     FOR %%i in (*.c) DO (call :concat %%i & gcc -c %%i -std=c99 -Os -s -pedantic & ECHO Compiling %%i)
      ECHO.
      ECHO Linking library...
      ECHO.
