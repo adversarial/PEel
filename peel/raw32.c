@@ -360,15 +360,20 @@ LOGICAL EXPORT LIBCALL PlEnumerateImports32(INOUT RAW_PE32* rpe) {
                 pII->Name = (char*)inName->Name;
             }
             pII->dwItemPtr = (PTR32*)&tdIat->u1.AddressOfData;
-            pII->Flink = calloc(1, sizeof(IMPORT_ITEM32));
-            if (pII->Flink == NULL)
-                return LOGICAL_MAYBE;
-            pII = (IMPORT_ITEM32*)pII->Flink;
+            THUNK_DATA32* tdNext = tdIat + 1;
+            if (tdNext->u1.Function) {
+                pII->Flink = calloc(1, sizeof(IMPORT_ITEM32));
+                if (pII->Flink == NULL)
+                    return LOGICAL_MAYBE;
+                pII = (IMPORT_ITEM32*)pII->Flink;
+            }
         }
-        pImport->Flink = calloc(1, sizeof(IMPORT_LIBRARY32));
-        if (pImport->Flink == NULL)
-            return LOGICAL_MAYBE;
-        pImport = (IMPORT_LIBRARY32*)pImport->Flink;
+        if (iidDesc[1].Characteristics) {   // check if next item is there (to allocate)
+            pImport->Flink = calloc(1, sizeof(IMPORT_LIBRARY32));   // fix extra allocation issue
+            if (pImport->Flink == NULL)
+                return LOGICAL_MAYBE;
+            pImport = (IMPORT_LIBRARY32*)pImport->Flink;
+        }
     }
     return LOGICAL_TRUE;
 }

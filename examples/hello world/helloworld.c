@@ -28,8 +28,6 @@ int main(int argc, char* argv[]) {
     // 2. Import
     PlEnumerateImports32(&vm.PE);
     for (IMPORT_LIBRARY32* pIL = vm.PE.pImport; pIL != NULL; pIL = (IMPORT_LIBRARY32*)pIL->Flink) {
-        if (pIL->Library == NULL)
-            break;
         printf("\nLoading from library %s", pIL->Library);
         if (GetModuleHandleA(pIL->Library) == NULL) 
             LoadLibraryA(pIL->Library);
