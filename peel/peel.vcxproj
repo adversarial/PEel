@@ -11,22 +11,18 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\examples\hlp\hlp.h" />
-    <ClInclude Include="..\examples\hlp\kpeb.h" />
-    <ClInclude Include="file32.h" />
+    <ClInclude Include="file.h" />
     <ClInclude Include="peel.h" />
     <ClInclude Include="preproc.h" />
-    <ClInclude Include="raw32.h" />
+    <ClInclude Include="raw.h" />
     <ClInclude Include="types.h" />
-    <ClInclude Include="virtual32.h" />
+    <ClInclude Include="virtual.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\hlp\hlp.c" />
-    <ClCompile Include="..\examples\hlp\kpeb.c" />
-    <ClCompile Include="file32.c" />
+    <ClCompile Include="file.c" />
     <ClCompile Include="peel.c" />
-    <ClCompile Include="raw32.c" />
-    <ClCompile Include="virtual32.c" />
+    <ClCompile Include="raw.c" />
+    <ClCompile Include="virtual.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CD9A8FF6-1D15-458B-9A4F-A7A0B7506520}</ProjectGuid>
@@ -63,6 +59,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <CompileAs>CompileAsCpp</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -85,7 +82,7 @@
       <AssemblerOutput>AssemblyCode</AssemblerOutput>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
-      <CompileAs>CompileAsC</CompileAs>
+      <CompileAs>CompileAsCpp</CompileAs>
       <OmitDefaultLibName>true</OmitDefaultLibName>
       <ExceptionHandling>false</ExceptionHandling>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions</EnableEnhancedInstructionSet>

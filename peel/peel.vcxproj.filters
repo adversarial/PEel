@@ -39,40 +39,28 @@
     <ClInclude Include="peel.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="file32.h">
+    <ClInclude Include="file.h">
       <Filter>Mr\file</Filter>
     </ClInclude>
-    <ClInclude Include="raw32.h">
-      <Filter>Mr\raw</Filter>
-    </ClInclude>
-    <ClInclude Include="virtual32.h">
+    <ClInclude Include="virtual.h">
       <Filter>Mr\virtual</Filter>
     </ClInclude>
-    <ClInclude Include="..\examples\hlp\hlp.h">
-      <Filter>Hlp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\examples\hlp\kpeb.h">
-      <Filter>Hlp</Filter>
+    <ClInclude Include="raw.h">
+      <Filter>Mr\raw</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="peel.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="file32.c">
+    <ClCompile Include="file.c">
       <Filter>Mr\file</Filter>
     </ClCompile>
-    <ClCompile Include="raw32.c">
+    <ClCompile Include="raw.c">
       <Filter>Mr\raw</Filter>
     </ClCompile>
-    <ClCompile Include="virtual32.c">
+    <ClCompile Include="virtual.c">
       <Filter>Mr\virtual</Filter>
     </ClCompile>
-    <ClCompile Include="..\examples\hlp\hlp.c">
-      <Filter>Hlp</Filter>
-    </ClCompile>
-    <ClCompile Include="..\examples\hlp\kpeb.c">
-      <Filter>Hlp</Filter>
+    <ClCompile Include="peel.c">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
