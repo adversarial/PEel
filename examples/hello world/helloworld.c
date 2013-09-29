@@ -25,10 +25,10 @@ int main(int argc, char* argv[]) {
         PlRelocate32(&vm.PE, vm.PE.pNtHdr->OptionalHeader.ImageBase, (PTR32)vm.pBaseAddr);
         printf("\nPE typically at %08p was relocated to %08p", vm.PE.pNtHdr->OptionalHeader.ImageBase, vm.pBaseAddr);
     }
-    // 2. Import
+    // 2. Import (yeah i know this is a terrible way, but I'm lazy and this is only an example)
     PlEnumerateImports32(&vm.PE);
     for (IMPORT_LIBRARY32* pIL = vm.PE.pImport; pIL != NULL; pIL = (IMPORT_LIBRARY32*)pIL->Flink) {
-        printf("\nLoading from library %s", pIL->Library);
+        printf("\nLoading library %s", pIL->Library);
         if (GetModuleHandleA(pIL->Library) == NULL) 
             LoadLibraryA(pIL->Library);
         for (IMPORT_ITEM32* pII = pIL->iiImportList; pII != NULL; pII = (IMPORT_ITEM32*)pII->Flink) {

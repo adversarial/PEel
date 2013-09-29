@@ -23,8 +23,12 @@
 #undef FALSE
 #define TRUE  1
 #define FALSE 0
+#define MAX_SECTIONS 0x100      // don't load any more sections
 
 #pragma region Build Options
+#   ifdef _MSC_VER         // we don't compile with msvc
+#       define SUPPORT_PE32PLUS             FALSE
+#   endif
 #	define EXPORT_ALL_FUNCTIONS				TRUE	// FALSE will include only basic mode items
 #	define LOAD_LEGIT						TRUE	// Register module with PEB::LdrList
 #	define SHED_CODECAVES					TRUE	// Shed anything that is hiding in padding (and rich)
@@ -73,7 +77,17 @@
 
 #pragma region Private
 // Watermark
+/*
+#ifndef _WATERMARK
+#define _WATERMARK
 static char szWatermark[] = "PEel v1.0 by x8esix"; // please don't remove, it's 22 bytes
+#if SUPPORT_PE32
+static char szWatermark[] = "PE32";
+#else
+static char szWatermark[] = "PE64";
+#endif
+#endif
+*/
 // Commentary
 #	define IN			// usu const
 #	define OUT			// ptr content will be modified

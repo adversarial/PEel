@@ -46,7 +46,7 @@
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR32 EXPORT LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment) {
+PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
     return (offset + alignment - 1) & -(alignment);
@@ -62,44 +62,11 @@ PTR32 EXPORT LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment
 ///
 /// <returns>
 /// Rounded value </returns>
-PTR32 EXPORT LIBCALL PlAlignDown32(IN const PTR32 offset, IN const PTR32 alignment) {
+PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
     return (offset & -(alignment));
 }
-
-/// <summary>
-///	Calculates aligned virtual size </summary>
-///
-/// <param name="offset">
-/// Address to align </param>
-/// <param name="alignment">
-/// Align up to </param>
-///
-/// <returns>
-/// Rounded value </returns>
-PTR64 EXPORT LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment) {
-    if (!alignment)
-        return offset;
-    return (offset + alignment - 1) & -(alignment);
-}
-
-/// <summary>
-///	Calculates aligned virtual size </summary>
-///
-/// <param name="offset">
-/// Address to align </param>
-/// <param name="alignment">
-/// Align down to </param>
-///
-/// <returns>
-/// Rounded value </returns>
-PTR64 EXPORT LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment) {
-    if (!alignment)
-        return offset;
-    return (offset & -(alignment));
-}
-
 
 /// <summary>
 ///	Converts section protection in SECTION_HEADER::Characteristics to page protection </summary>
@@ -116,7 +83,7 @@ DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics)
         dwProtect |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE;
     if (dwProtect & IMAGE_SCN_CNT_INITIALIZED_DATA
      || dwProtect & IMAGE_SCN_CNT_UNINITIALIZED_DATA)
-     dwProtect |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_WRITE;
+     dwProtect |= IMAGE_SCN_MEM_READ;
     // 1st bit is mem_shared, ignore it, #idgaf about r0
     dwProtect = (dwProtect >> (3 * CHAR_BIT + 5)) & 0xff;
     switch (dwProtect) {

@@ -36,7 +36,7 @@ X = done
 * = partially done/in progress
 
     What we care about:
-    [ ] x64 support ( lol )
+    [*] x64 support ( lol )
     [X]	Loading a PE file
     [X] Imports/Exports ( simply needs to be integrated into new RAW_PE format... todo )
     [ ] Resources ( 0xffffffffffffffffUL)
@@ -80,127 +80,72 @@ Additional notes:
         } PE_FLAGS;
 
         typedef struct _CODECAVE_LINKED_LIST32 {
-            PTR32	Offset,		// physical offset
+            PTR	    Offset,		// physical offset
                     Rva,		// 
                     Size,		// cb of file cave (can be 0)
                     VirtualSize;// cb of image cave (can be 0)
             DWORD	Attributes;	// Page protection
             void   *Data,
                    *Flink;
-        } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
+        } CODECAVE_LIST;	// stores data that was in padding/outside of sections
 
-        typedef struct _CODECAVE_LINKED_LIST64 {
-            PTR64	Offset,		// physical offset
-                    Rva,		// none of these fields need to be PTR64 but okay
-                    Size,		// cb of file cave (can be 0)
-                    VirtualSize;// cb of image cave (can be 0)
-            DWORD	Attributes;	// Page protection
-            void   *Data,
-                   *Flink;
-        } CODECAVE_LIST64;	// stores data that was in padding/outside of sections
-
-        typedef struct _IMPORT_ITEM_FLIST32 {
+        typedef struct _IMPORT_ITEM_FLIST {
             char  *Name,          // ptr to function name (NULL if by ordinal)
                   *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
             PTR32 *dwItemPtr;     // ptr to IAT entry
             void  *Flink;
-        } IMPORT_ITEM32;       // forward linked list of imports
+        } IMPORT_ITEM;       // forward linked list of imports
 
-        typedef struct _IMPORT_ITEM_FLIST64 {
-            char  *Name,          // ptr to function name (NULL if by ordinal)
-                  *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
-            PTR64 *dwItemPtr;     // ptr to IAT entry
-            void  *Flink;
-        } IMPORT_ITEM64;
-
-        typedef struct _IMPORT_LIBRARY_FLIST32 {
+        typedef struct _IMPORT_LIBRARY_FLIST {
             char          *Library; // ptr to char* that hold library name
-            IMPORT_ITEM32 *iiImportList;
+            IMPORT_ITEM   *iiImportList;
             void          *Flink;
-        } IMPORT_LIBRARY32;
+        } IMPORT_LIBRARY;
 
-        typedef struct _IMPORT_LIBRARY_FLIST64 {
-            char          *Library; // ptr to char* that hold library name
-            IMPORT_ITEM64 *iiImportList;
-            void          *Flink;
-        } IMPORT_LIBRARY64;
-
-        typedef struct _EXPORT_ITEM_FLIST32 {
+        typedef struct _EXPORT_ITEM_FLIST {
             char  *Name,
                   *Ordinal;
             PTR32 *dwItemPtr;
             void  *Flink;
-        } EXPORT_LIST32;
+        } EXPORT_LIST;
 
-        typedef struct _EXPORT_ITEM_FLIST64 {
-            char  *Name,
-                  *Ordinal;
-            PTR64 *dwItemPtr;
-            void  *Flink;
-        } EXPORT_LIST64;
-
-        typedef struct _RESOURCE_ITEM_FLIST32 {
+        typedef struct _RESOURCE_ITEM_FLIST {
             PTR    dwType;
             char  *Name;
             PTR    wId; // only use lower WORD
             size_t cbSize;
             void  *pData,
                   *Flink;
-        } RESOURCE_LIST32;
-
-        typedef struct _RESOURCE_ITEM_FLIST64 {
-            char  *Name;
-            PTR    wId; // only use lower WORD
-            void  *pData,
-                  *Flink;
-        } RESOURCE_LIST64;
-
-        typedef struct _RAW_PE32 {
-            DOS_HEADER		 *pDosHdr;
-            DOS_STUB 		 *pDosStub;
-            NT_HEADERS32 	 *pNtHdr;
-            SECTION_HEADER  **ppSecHdr;		    // array pointing to section headers
-            void		    **ppSectionData;    // array pointing to section data
-            PE_FLAGS		  LoadStatus;
+        } RESOURCE_LIST;
+        
+        typedef struct _RAW_PE {
+            DOS_HEADER		  *pDosHdr;
+            DOS_STUB 		  *pDosStub;
+#if SUPPORT_PE32PLUS
+            NT_HEADERS64      *pNtHdr;
+#else
+            NT_HEADERS32      *pNtHdr;
+#endif
+            SECTION_HEADER   **ppSecHdr;		    // array pointing to section headers
+            void		     **ppSectionData;       // array pointing to section data
+            PE_FLAGS		   LoadStatus;
 // essentials (pointers only)
 // the following allocate memory and, however are only used when their respective functions are called
-            CODECAVE_LIST32  *pCaveData;	    // forward-linked list containing codecaves
-            IMPORT_LIBRARY32 *pImport;              // forward-linked list of imports
-            EXPORT_LIST32    *pExport;              // forward-linked list of exports
-            RESOURCE_LIST32  *pResource;              // forward-linked list of resources
-        } RAW_PE32;	// wraps PE file
+            CODECAVE_LIST     *pCaveData;	    // forward-linked list containing codecaves
+            IMPORT_LIBRARY    *pImport;              // forward-linked list of imports
+            EXPORT_LIST       *pExport;              // forward-linked list of exports
+            RESOURCE_LIST     *pResource;              // forward-linked list of resources
+        } RAW_PE;	// wraps PE file
 
-        typedef struct _RAW_PE64 {
-            DOS_HEADER		 *pDosHdr;
-            DOS_STUB 		 *pDosStub;
-            NT_HEADERS64 	 *pNtHdr;
-            SECTION_HEADER  **ppSecHdr;		    // array pointing to section headers
-            void		    **ppSectionData;    // array pointing to section data
-            PE_FLAGS		  LoadStatus;
-// essentials (pointers only)
-// the following allocate memory and, however are only used when their respective functions are called
-            CODECAVE_LIST64  *pCaveData;	    // forward-linked list containing codecaves
-            IMPORT_LIBRARY64 *pImport;              // forward-linked list of imports
-            EXPORT_LIST64    *pExport;              // forward-linked list of exports
-            RESOURCE_LIST64  *pRI;              // forward-linked list of resources
-        } RAW_PE64;	// contains PE file
 
         typedef struct _VIRTUAL_PE_MODULE32 {
-            RAW_PE32    PE;
+            RAW_PE      PE;
             void	   *Flink,
                        *Blink;
             char		cName[8];	// identification of loaded DLLS, not sz
             void*		pBaseAddr;	// if headers aren't loaded
-        } VIRTUAL_MODULE32;	// wrapper to represent aligned PE
-
-        typedef struct _VIRTUAL_PE_MODULE64 {
-            RAW_PE64    PE;
-            void	   *Flink,
-                       *Blink;
-            char		cName[8];	// identification of loaded DLLS, not sz
-            void*		pBaseAddr;	// if headers aren't loaded
-        } VIRTUAL_MODULE64;	// wrapper to represent aligned PE
-
+        } VIRTUAL_MODULE;	// wrapper to represent aligned PE
+        
         typedef struct {
            uint16_t Offset	: 12,
                     Type	: 4;
@@ -221,25 +166,21 @@ Additional notes:
 
 #pragma region Basic Mode Prototypes
     // alignment & such
-    PTR32 EXPORT LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
-    PTR32 EXPORT LIBCALL PlAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
-    
-    PTR64 EXPORT LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
-    PTR64 EXPORT LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
+    PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment);
+    PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment);
     // conversions
     DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics);
     DWORD EXPORT LIBCALL PlPageToSectionProtection(IN const DWORD dwProtection);
 #pragma endregion
 
 #pragma region Macros
-#	define SIZEOF_PE_HEADERS32(rpe) (rpe->pDosHdr->e_lfanew + \
-                                     sizeof(NT_HEADERS32) + \
-                                     sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections)
-#   define SIZEOF_PE_HEADERS64(rpe) (rpe->pDosHdr->e_lfanew + \
-                                     sizeof(NT_HEADERS64) + \
+#	define SIZEOF_PE_HEADERS(rpe)   (rpe->pDosHdr->e_lfanew + \
+                                     sizeof(FILE_HEADER) + \
+                                     rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + \
+                                     sizeof(uint32_t) + \
                                      sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections)
 #pragma endregion
 
-#include "raw32.h"
-#include "file32.h"
-#include "virtual32.h"
+#include "raw.h"
+#include "file.h"
+#include "virtual.h"
