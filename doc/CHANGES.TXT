@@ -4,14 +4,17 @@ SEE ..\README.RTF
 
 TODO:
 	Resource enumerating
-	x64 support
 
-1.0 : 9/16
+1.0.0 : 9/30
+	x64 support complete (via rebuilding)
+	organized and added error checks
+
+0.1.0 : 9/16
 	Documentation!
 	Everything appears to be working
 	PlXxx namespace reflects official release
 
-0.1 : 8/15:
+0.0.1 : 8/15:
 	Import enumerating
 	Export enumerating
 	Relocating
