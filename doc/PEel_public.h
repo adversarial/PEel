@@ -25,13 +25,20 @@
 #   define IN
 #   define OUT
 #   define INOUT
+#   define SUPPORT_PE32PLUS 0   // set to 1 if using PEel32Plus.lib
+                                //        0 if using PEel32.lib
 #pragma endregion
 
 #pragma region Types
 #   pragma region Basic Types
         typedef uint32_t PTR32;
         typedef uint64_t PTR64;
+
+#if SUPPORT_PE32PLUS
+        typedef PTR64 PTR;
+#else
         typedef PTR32 PTR;
+#endif
 
         typedef signed char LOGICAL;
 
@@ -44,23 +51,45 @@
 #   	define LOGICAL_MAYBE	(LOGICAL)-1	// on 3rd-party failure
 #   pragma endregion
 
-#   pragma region Windows Proxies
+#pragma region Windows Proxies
+    #pragma region Types Defines
         typedef IMAGE_DOS_HEADER		 DOS_HEADER;
-        typedef IMAGE_NT_HEADERS32		 NT_HEADERS32;
+        typedef IMAGE_FILE_HEADER        FILE_HEADER;
+        typedef IMAGE_OPTIONAL_HEADER32  OPTIONAL_HEADER32;
+        typedef IMAGE_OPTIONAL_HEADER64  OPTIONAL_HEADER64;
+        typedef IMAGE_NT_HEADERS32       NT_HEADERS32;
         typedef IMAGE_NT_HEADERS64		 NT_HEADERS64;
-        typedef IMAGE_NT_HEADERS		 NT_HEADERS;
+#if SUPPORT_PE32PLUS
+        typedef NT_HEADERS64             NT_HEADERS;
+#else
+        typedef NT_HEADERS32             NT_HEADERS;
+#endif
         typedef IMAGE_SECTION_HEADER	 SECTION_HEADER;
         typedef IMAGE_BASE_RELOCATION	 BASE_RELOCATION;
         typedef IMAGE_IMPORT_DESCRIPTOR  IMPORT_DESCRIPTOR;
         typedef IMAGE_THUNK_DATA32		 THUNK_DATA32;
+        typedef IMAGE_THUNK_DATA64       THUNK_DATA64;
+#if SUPPORT_PE32PLUS
+        typedef THUNK_DATA64             THUNK_DATA;
+#else
+        typedef THUNK_DATA32             THUNK_DATA;
+#endif
         typedef IMAGE_IMPORT_BY_NAME	 IMPORT_NAME;
         typedef IMAGE_EXPORT_DIRECTORY   EXPORT_DIRECTORY;
         typedef IMAGE_DEBUG_DIRECTORY    DEBUG_DIRECTORY;
         typedef IMAGE_RESOURCE_DIRECTORY RESOURCE_DIRECTORY;
         typedef IMAGE_RESOURCE_DIRECTORY_ENTRY RESOURCE_DIRECTORY_ENTRY;
-        typedef IMAGE_RESOURCE_DIRECTORY_STRING RESOURCE_DIRECTORY_STRING;
-        typedef IMAGE_RESOURCE_DIR_STRING_U RESOURCE_DIR_STRING_U;
-#   pragma endregion
+        typedef IMAGE_RESOURCE_DATA_ENTRY RESOURCE_DATA_ENTRY;
+        
+        #define OPT_HDR_MAGIC32 IMAGE_NT_OPTIONAL_HDR32_MAGIC
+        #define OPT_HDR_MAGIC64 IMAGE_NT_OPTIONAL_HDR64_MAGIC
+#if SUPPORT_PE32PLUS
+        #define OPT_HDR_MAGIC OPT_HDR_MAGIC64
+#else
+        #define OPT_HDR_MAGIC OPT_HDR_MAGIC32
+#endif
+    #pragma endregion
+#pragma endregion
 #pragma endregion
 
 #pragma region Structs
@@ -79,134 +108,83 @@
         } PE_FLAGS;
 
         typedef struct _CODECAVE_LINKED_LIST32 {
-            PTR32	Offset,		// physical offset
+            PTR	    Offset,		// physical offset
                     Rva,		// 
                     Size,		// cb of file cave (can be 0)
                     VirtualSize;// cb of image cave (can be 0)
             DWORD	Attributes;	// Page protection
             void   *Data,
                    *Flink;
-        } CODECAVE_LIST32;	// stores data that was in padding/outside of sections
+        } CODECAVE_LIST;	// stores data that was in padding/outside of sections
 
-        typedef struct _CODECAVE_LINKED_LIST64 {
-            PTR64	Offset,		// physical offset
-                    Rva,		// none of these fields need to be PTR64 but okay
-                    Size,		// cb of file cave (can be 0)
-                    VirtualSize;// cb of image cave (can be 0)
-            DWORD	Attributes;	// Page protection
-            void   *Data,
-                   *Flink;
-        } CODECAVE_LIST64;	// stores data that was in padding/outside of sections
-
-        typedef struct _IMPORT_ITEM_FLIST32 {
+        typedef struct _IMPORT_ITEM_FLIST {
             char  *Name,          // ptr to function name (NULL if by ordinal)
                   *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
             PTR32 *dwItemPtr;     // ptr to IAT entry
             void  *Flink;
-        } IMPORT_ITEM32;       // forward linked list of imports
+        } IMPORT_ITEM;       // forward linked list of imports
 
-        typedef struct _IMPORT_ITEM_FLIST64 {
-            char  *Name,          // ptr to function name (NULL if by ordinal)
-                  *Ordinal;       // ptr to DWORD ordinal number (NULL if by name)
-            PTR64 *dwItemPtr;     // ptr to IAT entry
-            void  *Flink;
-        } IMPORT_ITEM64;
-
-        typedef struct _IMPORT_LIBRARY_FLIST32 {
+        typedef struct _IMPORT_LIBRARY_FLIST {
             char          *Library; // ptr to char* that hold library name
-            IMPORT_ITEM32 *iiImportList;
+            IMPORT_ITEM   *iiImportList;
             void          *Flink;
-        } IMPORT_LIBRARY32;
+        } IMPORT_LIBRARY;
 
-        typedef struct _IMPORT_LIBRARY_FLIST64 {
-            char          *Library; // ptr to char* that hold library name
-            IMPORT_ITEM64 *iiImportList;
-            void          *Flink;
-        } IMPORT_LIBRARY64;
-
-        typedef struct _EXPORT_ITEM_FLIST32 {
+        typedef struct _EXPORT_ITEM_FLIST {
             char  *Name,
                   *Ordinal;
             PTR32 *dwItemPtr;
             void  *Flink;
-        } EXPORT_LIST32;
+        } EXPORT_LIST;
 
-        typedef struct _EXPORT_ITEM_FLIST64 {
-            char  *Name,
-                  *Ordinal;
-            PTR64 *dwItemPtr;
-            void  *Flink;
-        } EXPORT_LIST64;
-
-        typedef struct _RESOURCE_ITEM_FLIST32 {
+        typedef struct _RESOURCE_ITEM_FLIST {
             PTR    dwType;
             char  *Name;
             PTR    wId; // only use lower WORD
             size_t cbSize;
             void  *pData,
                   *Flink;
-        } RESOURCE_LIST32;
-
-        typedef struct _RESOURCE_ITEM_FLIST64 {
-            char  *Name;
-            PTR    wId; // only use lower WORD
-            void  *pData,
-                  *Flink;
-        } RESOURCE_LIST64;
-
-        typedef struct _RAW_PE32 {
-            DOS_HEADER		 *pDosHdr;
-            DOS_STUB 		 *pDosStub;
-            NT_HEADERS32 	 *pNtHdr;
-            SECTION_HEADER  **ppSecHdr;		    // array pointing to section headers
-            void		    **ppSectionData;    // array pointing to section data
-            PE_FLAGS		  LoadStatus;
+        } RESOURCE_LIST;
+        
+        typedef struct _RAW_PE {
+            DOS_HEADER		  *pDosHdr;
+            DOS_STUB 		  *pDosStub;
+#if SUPPORT_PE32PLUS
+            NT_HEADERS64      *pNtHdr;
+#else
+            NT_HEADERS32      *pNtHdr;
+#endif
+            SECTION_HEADER   **ppSecHdr;		    // array pointing to section headers
+            void		     **ppSectionData;       // array pointing to section data
+            PE_FLAGS		   LoadStatus;
 // essentials (pointers only)
 // the following allocate memory and, however are only used when their respective functions are called
-            CODECAVE_LIST32  *pCaveData;	    // forward-linked list containing codecaves
-            IMPORT_LIBRARY32 *pImport;              // forward-linked list of imports
-            EXPORT_LIST32    *pExport;              // forward-linked list of exports
-            RESOURCE_LIST32  *pResource;              // forward-linked list of resources
-        } RAW_PE32;	// wraps PE file
+            CODECAVE_LIST     *pCaveData;	    // forward-linked list containing codecaves
+            IMPORT_LIBRARY    *pImport;              // forward-linked list of imports
+            EXPORT_LIST       *pExport;              // forward-linked list of exports
+            RESOURCE_LIST     *pResource;              // forward-linked list of resources
+        } RAW_PE;	// wraps PE file
 
-        typedef struct _RAW_PE64 {
-            DOS_HEADER		 *pDosHdr;
-            DOS_STUB 		 *pDosStub;
-            NT_HEADERS64 	 *pNtHdr;
-            SECTION_HEADER  **ppSecHdr;		    // array pointing to section headers
-            void		    **ppSectionData;    // array pointing to section data
-            PE_FLAGS		  LoadStatus;
-// essentials (pointers only)
-// the following allocate memory and, however are only used when their respective functions are called
-            CODECAVE_LIST64  *pCaveData;	    // forward-linked list containing codecaves
-            IMPORT_LIBRARY64 *pImport;              // forward-linked list of imports
-            EXPORT_LIST64    *pExport;              // forward-linked list of exports
-            RESOURCE_LIST64  *pRI;              // forward-linked list of resources
-        } RAW_PE64;	// contains PE file
 
         typedef struct _VIRTUAL_PE_MODULE32 {
-            RAW_PE32    PE;
+            RAW_PE      PE;
             void	   *Flink,
                        *Blink;
             char		cName[8];	// identification of loaded DLLS, not sz
             void*		pBaseAddr;	// if headers aren't loaded
-        } VIRTUAL_MODULE32;	// wrapper to represent aligned PE
-
-        typedef struct _VIRTUAL_PE_MODULE64 {
-            RAW_PE64    PE;
-            void	   *Flink,
-                       *Blink;
-            char		cName[8];	// identification of loaded DLLS, not sz
-            void*		pBaseAddr;	// if headers aren't loaded
-        } VIRTUAL_MODULE64;	// wrapper to represent aligned PE
-
-#   pragma pack(pop)
+        } VIRTUAL_MODULE;	// wrapper to represent aligned PE
+        
+        typedef struct {
+           uint16_t Offset	: 12,
+                    Type	: 4;
+        } RELOC_ITEM;
+#	pragma pack(pop)
 #pragma endregion
 
 #pragma region Prototypes
 #   pragma region Peel
-        PTR32 LIBCALL PlAlignUp32(IN const PTR32 offset, IN const PTR32 alignment);
-        PTR32 LIBCALL PlAlignDown32(IN const PTR32 offset, IN const PTR32 alignment);
+        PTR LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment);
+        PTR LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment);
     
         PTR64 LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
         PTR64 LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
@@ -216,61 +194,61 @@
 #   pragma endregion
 #   pragma region Raw
 // these can operate on any filled RAW_PE regardless of alignment
-        LOGICAL LIBCALL PlRvaToPa32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR32* Pa);
-        LOGICAL LIBCALL PlPaToRva32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR32* Rva);
+        LOGICAL LIBCALL PlRvaToPa(IN const RAW_PE* rpe, IN const PTR Rva, OUT PTR* Pa);
+        LOGICAL LIBCALL PlPaToRva(IN const RAW_PE* rpe, IN const PTR Pa, OUT PTR* Rva);
 
-        LOGICAL LIBCALL PlGetRvaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Rva, OUT PTR* Ptr);
-        LOGICAL LIBCALL PlGetPaPtr32(IN const RAW_PE32* rpe, IN const PTR32 Pa, OUT PTR* Ptr);
+        LOGICAL LIBCALL PlGetRvaPtr(IN const RAW_PE* rpe, IN const PTR Rva, OUT PTR* Ptr);
+        LOGICAL LIBCALL PlGetPaPtr(IN const RAW_PE* rpe, IN const PTR Pa, OUT PTR* Ptr);
 
-        LOGICAL LIBCALL PlWriteRva32(INOUT RAW_PE32* rpe, IN const PTR32 Rva, IN const void* pData, IN size_t cbData);
-        LOGICAL LIBCALL PlReadRva32(IN const RAW_PE32* rpe, IN const PTR32 Rva, IN void* pBuffer, IN size_t cbBufferMax);
-        LOGICAL LIBCALL PlWritePa32(INOUT RAW_PE32* rpe, IN const PTR32 Pa, IN const void* pData, IN size_t cbData);
-        LOGICAL LIBCALL PlReadPa32(IN const RAW_PE32* rpe, IN const PTR32 Pa, IN void* pBuffer, IN size_t cbBufferMax);
+        LOGICAL LIBCALL PlWriteRva(INOUT RAW_PE* rpe, IN const PTR Rva, IN const void* pData, IN size_t cbData);
+        LOGICAL LIBCALL PlReadRva(IN const RAW_PE* rpe, IN const PTR Rva, IN void* pBuffer, IN size_t cbBufferMax);
+        LOGICAL LIBCALL PlWritePa(INOUT RAW_PE* rpe, IN const PTR Pa, IN const void* pData, IN size_t cbData);
+        LOGICAL LIBCALL PlReadPa(IN const RAW_PE* rpe, IN const PTR Pa, IN void* pBuffer, IN size_t cbBufferMax);
 
-        LOGICAL LIBCALL PlRvaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Rva, OUT PTR32* Va);
-        LOGICAL LIBCALL PlPaToVa32(IN const VIRTUAL_MODULE32* vm, IN const PTR32 Pa, OUT PTR32* Va);
+        LOGICAL LIBCALL PlRvaToVa(IN const VIRTUAL_MODULE* vm, IN const PTR Rva, OUT PTR* Va);
+        LOGICAL LIBCALL PlPaToVa(IN const VIRTUAL_MODULE* vm, IN const PTR Pa, OUT PTR* Va);
 
-        LOGICAL LIBCALL PlMaxPa32(IN const RAW_PE32* rpe, OUT PTR32* MaxPa);
-        LOGICAL LIBCALL PlMaxRva32(IN const RAW_PE32* rpe, OUT PTR32* MaxRva);
+        LOGICAL LIBCALL PlMaxPa(IN const RAW_PE* rpe, OUT PTR* MaxPa);
+        LOGICAL LIBCALL PlMaxRva(IN const RAW_PE* rpe, OUT PTR* MaxRva);
     
-        LOGICAL LIBCALL PlEnumerateImports32(INOUT RAW_PE32* rpe);
-        LOGICAL LIBCALL PlFreeEnumeratedImports32(INOUT RAW_PE32* rpe);
+        LOGICAL LIBCALL PlEnumerateImports(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlFreeEnumeratedImports(INOUT RAW_PE* rpe);
 
-        LOGICAL LIBCALL PlEnumerateExports32(INOUT RAW_PE32* rpe);
-        LOGICAL LIBCALL PlFreeEnumeratedExports32(INOUT RAW_PE32* rpe);
+        LOGICAL LIBCALL PlEnumerateExports(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlFreeEnumeratedExports(INOUT RAW_PE* rpe);
 
-//        LOGICAL LIBCALL PlEnumerateResources32(INOUT RAW_PE32* rpe);
-        LOGICAL LIBCALL PlRelocate32(INOUT RAW_PE32* rpe, IN const PTR32 dwOldBase, IN const PTR32 dwNewBase);
+        LOGICAL LIBCALL PlRelocate(INOUT RAW_PE* rpe, IN const PTR dwOldBase, IN const PTR dwNewBase);
+    
 
-        LOGICAL LIBCALL PlCalculateChecksum32(INOUT RAW_PE32* rpe, OUT DWORD* dwChecksum);
+        LOGICAL LIBCALL PlCalculateChecksum(INOUT RAW_PE* rpe, OUT DWORD* dwChecksum);
 #   pragma endregion
 #   pragma region File
 // these will only work on file aligned PEs
-        LOGICAL LIBCALL PlAttachFile32(IN const void* const pFileBase, OUT RAW_PE32* rpe);
-        LOGICAL LIBCALL PlDetachFile32(INOUT RAW_PE32* rpe);
+        LOGICAL LIBCALL PlAttachFile(IN const void* const pFileBase, OUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlDetachFile(INOUT RAW_PE* rpe);
 
-        LOGICAL LIBCALL PlFileToImage32(IN const RAW_PE32* rpe, OUT VIRTUAL_MODULE32* vm);
-        LOGICAL LIBCALL PlFileToImage32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm);
+        LOGICAL LIBCALL PlFileToImage(IN const RAW_PE* rpe, OUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE* vm);
 
-        LOGICAL LIBCALL PlCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
-        LOGICAL LIBCALL PlCopyFile32Ex(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
+        LOGICAL LIBCALL PlCopyFile(IN const RAW_PE* rpe, OUT RAW_PE* crpe);
+        LOGICAL LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe);
 
-        LOGICAL LIBCALL PlFreeFile32(INOUT RAW_PE32* rpe);
+        LOGICAL LIBCALL PlFreeFile(INOUT RAW_PE* rpe);
 #   pragma endregion
 #   pragma region Virtual
 // these will only work on image aligned PEs
-        LOGICAL LIBCALL PlAttachImage32(IN const void* const pModuleBase, OUT VIRTUAL_MODULE32* vm);
-        LOGICAL LIBCALL PlDetachImage32(INOUT VIRTUAL_MODULE32* vm);
+        LOGICAL LIBCALL PlAttachImage(IN const void* const pModuleBase, OUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlDetachImage(INOUT VIRTUAL_MODULE* vm);
 
-        LOGICAL LIBCALL PlImageToFile32(IN const VIRTUAL_MODULE32* vm, OUT RAW_PE32* rpe);
-        LOGICAL LIBCALL PlImageToFile32Ex(IN const VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT RAW_PE32* rpe);
+        LOGICAL LIBCALL PlImageToFile(IN const VIRTUAL_MODULE* vm, OUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlImageToFileEx(IN const VIRTUAL_MODULE* vm, IN const void* pBuffer, OUT RAW_PE* rpe);
 
-        LOGICAL LIBCALL PlCopyImage32(IN VIRTUAL_MODULE32* vm, OUT VIRTUAL_MODULE32* cvm);
-        LOGICAL LIBCALL PlCopyImage32Ex(IN VIRTUAL_MODULE32* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE32* cvm);
+        LOGICAL LIBCALL PlCopyImage(IN VIRTUAL_MODULE* vm, OUT VIRTUAL_MODULE* cvm);
+        LOGICAL LIBCALL PlCopyImageEx(IN VIRTUAL_MODULE* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE* cvm);
 
-        LOGICAL LIBCALL PlProtectImage32(INOUT VIRTUAL_MODULE32* vm);
-        LOGICAL LIBCALL PlUnprotectImage32(INOUT VIRTUAL_MODULE32* vm);
+        LOGICAL LIBCALL PlProtectImage(INOUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlUnprotectImage(INOUT VIRTUAL_MODULE* vm);
 
-        LOGICAL LIBCALL PlFreeImage32(INOUT VIRTUAL_MODULE32* vm);
+        LOGICAL LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm);
 #   pragma endregion
 #pragma endregion
