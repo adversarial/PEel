@@ -41,13 +41,17 @@ LOGICAL EXPORT LIBCALL PlAttachFile(IN const void* const pFileBase, OUT RAW_PE* 
         return LOGICAL_FALSE;
 #endif
     if (rpe->pNtHdr->FileHeader.NumberOfSections) {
-        rpe->ppSecHdr = (SECTION_HEADER**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        WORD wNumSections = rpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS ? MAX_SECTIONS : rpe->pNtHdr->FileHeader.NumberOfSections;
+        if (rpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
+            dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, rpe->pNtHdr->FileHeader.NumberOfSections);
+
+        rpe->ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
         if (rpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        rpe->ppSectionData = (void**)malloc(rpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
+        rpe->ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (register size_t i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < wNumSections; ++i) {
             rpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&rpe->pNtHdr->OptionalHeader + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             rpe->ppSectionData[i] = (void*)((PTR)rpe->pDosHdr + rpe->ppSecHdr[i]->PointerToRawData);
         }
@@ -132,13 +136,17 @@ LOGICAL EXPORT LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuf
     vm->PE.pNtHdr = (NT_HEADERS*)((PTR)vm->pBaseAddr + vm->PE.pDosHdr->e_lfanew);
     memmove(vm->PE.pNtHdr, rpe->pNtHdr, sizeof(NT_HEADERS));
     if (vm->PE.pNtHdr->FileHeader.NumberOfSections) {
-        vm->PE.ppSecHdr = (SECTION_HEADER**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        WORD wNumSections = vm->PE.pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS ? MAX_SECTIONS : vm->PE.pNtHdr->FileHeader.NumberOfSections;
+        if (vm->PE.pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
+            dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, vm->PE.pNtHdr->FileHeader.NumberOfSections);
+
+        vm->PE.ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
         if (vm->PE.ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        vm->PE.ppSectionData = (void**)malloc(vm->PE.pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
+        vm->PE.ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (register size_t i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < wNumSections; ++i) {
             vm->PE.ppSecHdr[i] = (SECTION_HEADER*)((PTR)&vm->PE.pNtHdr->OptionalHeader + vm->PE.pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(vm->PE.ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
             vm->PE.ppSectionData[i] = (void*)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress);
@@ -203,13 +211,17 @@ LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer
     crpe->pNtHdr = (NT_HEADERS*)((PTR)crpe->pDosHdr + crpe->pDosHdr->e_lfanew);
     memmove(crpe->pNtHdr, rpe->pNtHdr, sizeof(NT_HEADERS));
     if (crpe->pNtHdr->FileHeader.NumberOfSections) {
-        crpe->ppSecHdr = (SECTION_HEADER**)malloc(crpe->pNtHdr->FileHeader.NumberOfSections * sizeof(SECTION_HEADER*));
+        WORD wNumSections = crpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS ? MAX_SECTIONS : crpe->pNtHdr->FileHeader.NumberOfSections;
+        if (crpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
+            dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, crpe->pNtHdr->FileHeader.NumberOfSections);
+
+        crpe->ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
         if (crpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        crpe->ppSectionData = (void**)malloc(crpe->pNtHdr->FileHeader.NumberOfSections * sizeof(void*));
+        crpe->ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
         if (crpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
-        for (register size_t i = 0; i < crpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
+        for (register size_t i = 0; i < wNumSections; ++i) {
             crpe->ppSecHdr[i] = (SECTION_HEADER*)((PTR)&crpe->pNtHdr->OptionalHeader + crpe->pNtHdr->FileHeader.SizeOfOptionalHeader + sizeof(SECTION_HEADER) * i);
             memmove(crpe->ppSecHdr[i], rpe->ppSecHdr[i], sizeof(SECTION_HEADER));
             crpe->ppSectionData[i] = (void*)((PTR)crpe->pDosHdr + crpe->ppSecHdr[i]->PointerToRawData);
