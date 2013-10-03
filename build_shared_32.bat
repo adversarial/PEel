@@ -24,7 +24,7 @@ set objects=
 
 cd .\peel\
 
-     FOR %%i in (*.c) DO (gcc -c -DBUILDING_EXAMPLE_DLL -DSUPPORT_PE32 %%i -std=c99 -Os -pedantic & ECHO Compiling %%i)
+     FOR %%i in (*.c) DO (gcc -c -DBUILDING_EXAMPLE_DLL -DSUPPORT_PE32 %%i -std=c99 -Os -s -pedantic & ECHO Compiling %%i)
 
      ECHO.
      ECHO Linking library...
@@ -36,7 +36,7 @@ cd .\peel\
 
      dllwrap --def ..\doc\PEel32.def -o ..\Release\PEel32.dll %objects%
      
-   :: gcc -shared -o ..\Release\PEel.dll %objects% -Wl,--out-implib,..\Release\PEel_dll.lib
+   :: gcc -shared -o ..\Release\PEel32.dll %objects% -Wl,--out-implib,..\Release\PEel_dll32.lib
 
 ECHO.
 ECHO Cleaning up...

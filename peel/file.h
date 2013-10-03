@@ -28,4 +28,6 @@
     LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe);
 
     LOGICAL EXPORT LIBCALL PlFreeFile(INOUT RAW_PE* rpe);
+
+    LOGICAL EXPORT LIBCALL PlReleaseFile(INOUT RAW_PE* rpe);
 #pragma endregion
