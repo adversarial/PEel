@@ -8,7 +8,7 @@ set objects=
 
 cd .\peel\
 
-     FOR %%i in (*.c) DO (gcc -c -DBUILDING_EXAMPLE_DLL -DSUPPORT_PE32PLUS %%i -std=c99 -Os & ECHO Compiling %%i)
+     FOR %%i in (*.c) DO (gcc -c -DBUILDING_EXAMPLE_DLL -DSUPPORT_PE32PLUS %%i -std=c99 -Os -s & ECHO Compiling %%i)
 
      ECHO.
      ECHO Linking library...

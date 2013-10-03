@@ -17,53 +17,6 @@
 #include "raw.h"
 
 /// <summary>
-///	Changes a PE's page protections to allow for execution </summary>
-///
-/// <param name="vm">
-/// Pointer to loaded VIRTUAL_MODULE </param>
-///
-/// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL PlProtectImage(INOUT VIRTUAL_MODULE* vm) {
-    DWORD        dwProtect = 0;
-    unsigned int i;
-
-    if (!VirtualProtect(vm->PE.pDosHdr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProtect))
-        return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
-        dwProtect = PlSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics);
-        // virtualsize will be rounded up to page size, although we could align to SectionAlignment on our own
-        if (!VirtualProtect((LPVOID)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress), vm->PE.ppSecHdr[i]->Misc.VirtualSize, dwProtect, &dwProtect))
-            return LOGICAL_FALSE;
-    }
-    vm->PE.LoadStatus.Protected = TRUE;
-    return LOGICAL_TRUE;
-}
-
-/// <summary>
-///	Returns a PE to read & write pages for editing </summary>
-///
-/// <param name="vm">
-/// Pointer to loaded VIRTUAL_MODULE </param>
-///
-/// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
-LOGICAL EXPORT LIBCALL PlUnprotectImage(INOUT VIRTUAL_MODULE* vm) {
-    DWORD        dwProtect = 0;
-    unsigned int i;
-
-    if (!VirtualProtect(vm->PE.pDosHdr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READWRITE, &dwProtect))
-        return LOGICAL_FALSE;
-    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
-        // virtualsize will be rounded up to page size, although we could align to SectionAlignment on our own
-        if (!VirtualProtect((LPVOID)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress), vm->PE.ppSecHdr[i]->Misc.VirtualSize, PAGE_READWRITE, &dwProtect))
-            return LOGICAL_FALSE;
-    }
-    vm->PE.LoadStatus.Protected = FALSE;
-    return LOGICAL_TRUE;
-}
-
-/// <summary>
 ///	Fills VIRTUAL_MODULE with loaded image's information </summary>
 ///
 /// <param name="pModuleBase">
@@ -129,15 +82,10 @@ LOGICAL EXPORT LIBCALL PlAttachImage(IN const void* const pModuleBase, OUT VIRTU
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
 LOGICAL EXPORT LIBCALL PlDetachImage(INOUT VIRTUAL_MODULE* vm) {
     VIRTUAL_MODULE *vmNext = NULL,
-                     *vmPrev = NULL;
-    
-    if (!vm->PE.LoadStatus.Attached)
-        return LOGICAL_FALSE;
+                   *vmPrev = NULL;
 
-    if (vm->PE.ppSecHdr != NULL)
-        free(vm->PE.ppSecHdr);
-    if (vm->PE.ppSectionData != NULL)
-        free(vm->PE.ppSectionData);
+    if (!LOGICAL_SUCCESS(PlDetachFile(&vm->PE)))
+        return LOGICAL_FALSE;
     dmsg(TEXT("\nUnlinking PE Image at %p"), vm->pBaseAddr);
     vmPrev = (VIRTUAL_MODULE*)vm->Blink;
     vmNext = (VIRTUAL_MODULE*)vm->Flink;
@@ -306,6 +254,54 @@ LOGICAL EXPORT LIBCALL PlCopyImageEx(IN VIRTUAL_MODULE* vm, IN const void* pBuff
     return LOGICAL_TRUE;
 }
 
+
+/// <summary>
+///	Changes a PE's page protections to allow for execution </summary>
+///
+/// <param name="vm">
+/// Pointer to loaded VIRTUAL_MODULE </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
+LOGICAL EXPORT LIBCALL PlProtectImage(INOUT VIRTUAL_MODULE* vm) {
+    DWORD        dwProtect = 0;
+    unsigned int i;
+
+    if (!VirtualProtect(vm->PE.pDosHdr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READONLY, &dwProtect))
+        return LOGICAL_FALSE;
+    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        dwProtect = PlSectionToPageProtection(vm->PE.ppSecHdr[i]->Characteristics);
+        // virtualsize will be rounded up to page size, although we could align to SectionAlignment on our own
+        if (!VirtualProtect((LPVOID)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress), vm->PE.ppSecHdr[i]->Misc.VirtualSize, dwProtect, &dwProtect))
+            return LOGICAL_FALSE;
+    }
+    vm->PE.LoadStatus.Protected = TRUE;
+    return LOGICAL_TRUE;
+}
+
+/// <summary>
+///	Returns a PE to read & write pages for editing </summary>
+///
+/// <param name="vm">
+/// Pointer to loaded VIRTUAL_MODULE </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT error </returns>
+LOGICAL EXPORT LIBCALL PlUnprotectImage(INOUT VIRTUAL_MODULE* vm) {
+    DWORD        dwProtect = 0;
+    unsigned int i;
+
+    if (!VirtualProtect(vm->PE.pDosHdr, vm->PE.pNtHdr->OptionalHeader.SizeOfHeaders, PAGE_READWRITE, &dwProtect))
+        return LOGICAL_FALSE;
+    for (i = 0; i < vm->PE.pNtHdr->FileHeader.NumberOfSections; ++i) {
+        // virtualsize will be rounded up to page size, although we could align to SectionAlignment on our own
+        if (!VirtualProtect((LPVOID)((PTR)vm->pBaseAddr + vm->PE.ppSecHdr[i]->VirtualAddress), vm->PE.ppSecHdr[i]->Misc.VirtualSize, PAGE_READWRITE, &dwProtect))
+            return LOGICAL_FALSE;
+    }
+    vm->PE.LoadStatus.Protected = FALSE;
+    return LOGICAL_TRUE;
+}
+
 /// <summary>
 ///	Frees a mapped image that was allocated </summary>
 ///
@@ -316,16 +312,10 @@ LOGICAL EXPORT LIBCALL PlCopyImageEx(IN VIRTUAL_MODULE* vm, IN const void* pBuff
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
 LOGICAL EXPORT LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm) {
     VIRTUAL_MODULE *vmNext = NULL,
-                     *vmPrev = NULL;
-    
-    if (vm->PE.LoadStatus.Attached == TRUE)
-        return LOGICAL_FALSE;
+                   *vmPrev = NULL;
 
-    if (vm->PE.ppSecHdr != NULL)
-        free(vm->PE.ppSecHdr);
-    if (vm->PE.ppSectionData != NULL)
-        free(vm->PE.ppSectionData);
-    VirtualFree(vm->pBaseAddr, 0, MEM_RELEASE);
+    if (!LOGICAL_SUCCESS(PlFreeFile(&vm->PE)))
+        return LOGICAL_FALSE;
 
     dmsg(TEXT("\nUnlinking PE Image at %p"), vm->pBaseAddr);
     vmPrev = (VIRTUAL_MODULE*)vm->Blink;
@@ -336,4 +326,19 @@ LOGICAL EXPORT LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm) {
         vmNext->Blink = vmPrev;
     memset(vm, 0, sizeof(VIRTUAL_MODULE));
     return LOGICAL_TRUE;
+}
+
+/// <summary>
+///	Either frees or detaches a file </summary>
+///
+/// <param name="rpe">
+/// Loaded RAW_PE struct </param>
+///
+/// <returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *vm is zeroed </returns>
+LOGICAL EXPORT LIBCALL PlReleaseImage(INOUT VIRTUAL_MODULE* vm) {
+    if (vm->PE.LoadStatus.Attached == TRUE)
+        return PlFreeImage(vm);
+    else
+        return PlDetachImage(vm);
 }

@@ -37,3 +37,5 @@ EXPORTS
     PlUnprotectImage64 = PlUnprotectImage@4 @36
     PlWritePa64 = PlWritePa@20 @37
     PlWriteRva64 = PlWriteRva@20 @38
+    PlReleaseFile64 = PlReleaseFile@4 @39
+    PlReleaseImage64 = PlReleaseImage@4 @40

@@ -234,6 +234,8 @@
         LOGICAL LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe);
 
         LOGICAL LIBCALL PlFreeFile(INOUT RAW_PE* rpe);
+
+        LOGICAL LIBCALL PlReleaseImage(INOUT VIRTUAL_MODULE* vm);
 #   pragma endregion
 #   pragma region Virtual
 // these will only work on image aligned PEs
@@ -250,5 +252,7 @@
         LOGICAL LIBCALL PlUnprotectImage(INOUT VIRTUAL_MODULE* vm);
 
         LOGICAL LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm);
+
+        LOGICAL LIBCALL PlReleaseFile(INOUT RAW_PE* rpe);
 #   pragma endregion
 #pragma endregion
