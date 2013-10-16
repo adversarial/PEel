@@ -266,7 +266,7 @@ LOGICAL EXPORT LIBCALL PlFreeFile(INOUT RAW_PE* rpe) {
 /// Loaded RAW_PE struct </param>
 ///
 /// <returns>
-/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *rpe is zeroed </returns>
+/// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error, *rpe  is zeroed </returns>
 LOGICAL EXPORT LIBCALL PlReleaseFile(INOUT RAW_PE* rpe) {
     if (rpe->LoadStatus.Attached == TRUE)
         return PlDetachFile(rpe);

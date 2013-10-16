@@ -12,18 +12,18 @@ int main(int argc, char* argv[]) {
         RAW_PE rpe = {0};
         if (!LOGICAL_SUCCESS(PlAttachFile(test_exe, &rpe)))
             return 0;
-        printf("File aligned PE at %08p", rpe.pDosHdr);
+        printf("File aligned PE at %p", rpe.pDosHdr);
         if (!LOGICAL_SUCCESS(PlFileToImage(&rpe, &vm))) {
             PlDetachFile(&rpe);
             return 0;
         }
         PlDetachFile(&rpe);
     }
-    printf("\nImage aligned PE at %08p", vm.pBaseAddr);
+    printf("\nImage aligned PE at %p", vm.pBaseAddr);
     // 1. Relocate (we know our image has a .reloc section)
     if ((void*)vm.PE.pNtHdr->OptionalHeader.ImageBase != vm.pBaseAddr) {
         PlRelocate(&vm.PE, vm.PE.pNtHdr->OptionalHeader.ImageBase, (PTR)vm.pBaseAddr);
-        printf("\nPE typically at %08p was relocated to %08p", vm.PE.pNtHdr->OptionalHeader.ImageBase, vm.pBaseAddr);
+        printf("\nPE typically at %p was relocated to %p", vm.PE.pNtHdr->OptionalHeader.ImageBase, vm.pBaseAddr);
     }
     // 2. Import (yeah i know this is a terrible way, but I'm lazy and this is only an example)
     PlEnumerateImports(&vm.PE);
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
             if (pII->Name != NULL)
                 printf("\n\tImporting %s", pII->Name);
             else
-                printf("\n\tImporting ordinal %08lx", pII->Ordinal);
+                printf("\n\tImporting ordinal %p", pII->Ordinal);
             *pII->dwItemPtr = (PTR)GetProcAddress(GetModuleHandleA(pIL->Library), pII->Name != NULL ? pII->Name : pII->Ordinal);
         }
     }
@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
         typedef void (*EntryPtr)();
         EntryPtr E = (EntryPtr)dwEntryPoint;
         if (dwEntryPoint) {
-            printf("\nCalling entry point at %08p", dwEntryPoint);
+            printf("\nCalling entry point at %p", dwEntryPoint);
             E();
         } else
             printf("\nImage does not have an entry point...");

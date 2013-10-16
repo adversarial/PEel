@@ -19,7 +19,6 @@
     <ClInclude Include="virtual.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\examples\hello world\helloworld.c" />
     <ClCompile Include="file.c" />
     <ClCompile Include="peel.c" />
     <ClCompile Include="raw.c" />
