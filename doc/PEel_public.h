@@ -25,7 +25,7 @@
 #   define IN
 #   define OUT
 #   define INOUT
-#   define SUPPORT_PE32PLUS 0   // set to 1 if using PEel32Plus.lib
+//#   define SUPPORT_PE32PLUS 0   // set to 1 if using PEel32Plus.lib
                                 //        0 if using PEel32.lib
 #pragma endregion
 
