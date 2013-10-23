@@ -20,7 +20,7 @@ for more info.
   
   > PEel_public.h -- header file to include in projects
   
-  > LICENSE.TXT   -- open source, LGPLv3 license
+  > LICENSE.TXT   -- MIT license
   > CHANGES.TXT	  -- changelog
   
   > examples/hello world -- example loading of a PE (non-recursive
