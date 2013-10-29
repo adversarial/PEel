@@ -58,4 +58,6 @@
     LOGICAL EXPORT LIBCALL PlRelocate(INOUT RAW_PE* rpe, IN const PTR dwOldBase, IN const PTR dwNewBase);
     
     LOGICAL EXPORT LIBCALL PlCalculateChecksum(INOUT RAW_PE* rpe, OUT DWORD* dwChecksum);
+
+    LOGICAL EXPORT LIBCALL PlSizeofPeHeaders(IN const RAW_PE* rpe, OUT PTR* SizeofHeaders);
 #pragma endregion

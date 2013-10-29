@@ -90,8 +90,10 @@ LOGICAL EXPORT LIBCALL PlPaToRva(IN const RAW_PE* rpe, IN const PTR Pa, OUT PTR*
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error </returns>
 LOGICAL EXPORT LIBCALL PlGetRvaPtr(IN const RAW_PE* rpe, IN const PTR Rva, OUT PTR* Ptr) {
-    PTR Offset = 0;
+    PTR Offset = 0,
+        SizeofHeaders = 0;
 
+    PlSizeofPeHeaders(rpe, &SizeofHeaders);
     // check if it's in headers
     if (Rva > rpe->pNtHdr->OptionalHeader.SizeOfHeaders) {
         // find section
@@ -102,14 +104,14 @@ LOGICAL EXPORT LIBCALL PlGetRvaPtr(IN const RAW_PE* rpe, IN const PTR Rva, OUT P
                 break;
             }
         }
-    } else if (Rva < SIZEOF_PE_HEADERS(rpe)) {
+    } else if (Rva < SizeofHeaders) {
         if (Rva < sizeof(DOS_HEADER))
             Offset = (PTR)rpe->pDosHdr + Rva;
         else if (Rva < sizeof(DOS_HEADER) + sizeof(DOS_STUB))
             Offset = (PTR)rpe->pDosStub + Rva - sizeof(DOS_HEADER);
         else if (Rva < rpe->pDosHdr->e_lfanew + sizeof(NT_HEADERS))
             Offset = (PTR)rpe->pNtHdr + Rva - rpe->pDosHdr->e_lfanew;
-        else if (Rva < SIZEOF_PE_HEADERS(rpe)) {
+        else if (Rva < SizeofHeaders) {
             // find correct header
             for (register size_t i = 0; i < rpe->pNtHdr->FileHeader.NumberOfSections; ++i) {
                 if (Rva > rpe->pDosHdr->e_lfanew + sizeof(NT_HEADERS) + sizeof(SECTION_HEADER) * i
@@ -607,4 +609,18 @@ LOGICAL EXPORT LIBCALL PlCalculateChecksum(INOUT RAW_PE* rpe, OUT DWORD* dwCheck
             return LOGICAL_TRUE;
         }
     return LOGICAL_FALSE;
+}
+
+/// <summary>
+///	Gets unpadded size of headers </summary>
+///
+/// <param name="rpe">
+/// Loaded RAW_PE </param>
+///
+/// <returns>
+/// LOGICAL_TRUE </returns>
+LOGICAL EXPORT LIBCALL PlSizeofPeHeaders(IN const RAW_PE* rpe, OUT PTR* SizeofHeaders) {
+    *SizeofHeaders = rpe->pDosHdr->e_lfanew + sizeof(FILE_HEADER) + rpe->pNtHdr->FileHeader.SizeOfOptionalHeader +
+                        sizeof(uint32_t) + sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections;
+    return LOGICAL_TRUE;
 }

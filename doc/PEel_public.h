@@ -219,8 +219,9 @@
 
         LOGICAL LIBCALL PlRelocate(INOUT RAW_PE* rpe, IN const PTR dwOldBase, IN const PTR dwNewBase);
     
-
         LOGICAL LIBCALL PlCalculateChecksum(INOUT RAW_PE* rpe, OUT DWORD* dwChecksum);
+
+        LOGICAL LIBCALL PlSizeofPeHeaders(IN const RAW_PE* rpe, OUT PTR* SizeofHeaders);
 #   pragma endregion
 #   pragma region File
 // these will only work on file aligned PEs

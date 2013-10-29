@@ -39,3 +39,4 @@ EXPORTS
     PlWriteRva32 = PlWriteRva@16 @38
     PlReleaseFile32 = PlReleaseFile@4 @39
     PlReleaseImage32 = PlReleaseImage@4 @40
+    PlSizeofPeHeaders32 = PlSizeofPeHeaders@8 @41
