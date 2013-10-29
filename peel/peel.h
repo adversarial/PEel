@@ -180,14 +180,6 @@ Additional notes:
     DWORD EXPORT LIBCALL PlPageToSectionProtection(IN const DWORD dwProtection);
 #pragma endregion
 
-#pragma region Macros
-#	define SIZEOF_PE_HEADERS(rpe)   (rpe->pDosHdr->e_lfanew + \
-                                     sizeof(FILE_HEADER) + \
-                                     rpe->pNtHdr->FileHeader.SizeOfOptionalHeader + \
-                                     sizeof(uint32_t) + \
-                                     sizeof(SECTION_HEADER) * rpe->pNtHdr->FileHeader.NumberOfSections)
-#pragma endregion
-
 #include "raw.h"
 #include "file.h"
 #include "virtual.h"
