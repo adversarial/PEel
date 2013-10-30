@@ -16,7 +16,7 @@ cd .\peel\
 
      FOR %%i in (*.o) DO (call :concat2 %%i & ECHO Adding %%i to library)    
 
-     dllwrap --def ..\doc\PEel64.def -o ..\Release\PEel64.dll %objects%
+     dllwrap --def ..\doc\PEel32Plus.def -o ..\Release\PEel32Plus.dll %objects%
 
   ::   gcc -shared -o ..\Release\PEel.dll %objects% -Wl,--kill-at,--output-def,..\doc\PEel64.def
 
