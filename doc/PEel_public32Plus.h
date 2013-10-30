@@ -1,5 +1,4 @@
-// for linking to PEelXx.lib
-// usage: define SUPPORT_PE32PLUS to a non-zero value if linking to PEel32Plus
+// for dynamic linking to PEel32Plus.dll
 
 /*
  * (C) Copyright 2013 x8esix.
@@ -16,7 +15,7 @@
  *
  */
 
-// this header last updated on 9.16.2013
+// this header last updated on 10.27.2013
 
 #pragma once
 
@@ -28,8 +27,6 @@
 #   define IN
 #   define OUT
 #   define INOUT
-//#   define SUPPORT_PE32PLUS 0   // set to 1 if using PEel32Plus.lib
-                                //        0 if using PEel32.lib
 #pragma endregion
 
 #pragma region Types
@@ -37,11 +34,7 @@
         typedef uint32_t PTR32;
         typedef uint64_t PTR64;
 
-#if SUPPORT_PE32PLUS
         typedef PTR64 PTR;
-#else
-        typedef PTR32 PTR;
-#endif
 
         typedef signed char LOGICAL;
 
@@ -62,21 +55,13 @@
         typedef IMAGE_OPTIONAL_HEADER64  OPTIONAL_HEADER64;
         typedef IMAGE_NT_HEADERS32       NT_HEADERS32;
         typedef IMAGE_NT_HEADERS64		 NT_HEADERS64;
-#if SUPPORT_PE32PLUS
         typedef NT_HEADERS64             NT_HEADERS;
-#else
-        typedef NT_HEADERS32             NT_HEADERS;
-#endif
         typedef IMAGE_SECTION_HEADER	 SECTION_HEADER;
         typedef IMAGE_BASE_RELOCATION	 BASE_RELOCATION;
         typedef IMAGE_IMPORT_DESCRIPTOR  IMPORT_DESCRIPTOR;
         typedef IMAGE_THUNK_DATA32		 THUNK_DATA32;
         typedef IMAGE_THUNK_DATA64       THUNK_DATA64;
-#if SUPPORT_PE32PLUS
         typedef THUNK_DATA64             THUNK_DATA;
-#else
-        typedef THUNK_DATA32             THUNK_DATA;
-#endif
         typedef IMAGE_IMPORT_BY_NAME	 IMPORT_NAME;
         typedef IMAGE_EXPORT_DIRECTORY   EXPORT_DIRECTORY;
         typedef IMAGE_DEBUG_DIRECTORY    DEBUG_DIRECTORY;
@@ -86,11 +71,7 @@
         
         #define OPT_HDR_MAGIC32 IMAGE_NT_OPTIONAL_HDR32_MAGIC
         #define OPT_HDR_MAGIC64 IMAGE_NT_OPTIONAL_HDR64_MAGIC
-#if SUPPORT_PE32PLUS
         #define OPT_HDR_MAGIC OPT_HDR_MAGIC64
-#else
-        #define OPT_HDR_MAGIC OPT_HDR_MAGIC32
-#endif
     #pragma endregion
 #pragma endregion
 #pragma endregion
@@ -104,7 +85,7 @@
         } DOS_STUB;
         
         typedef struct _PE_LOADING_FLAGS { // ptr size for alignment, can be adjusted if necessary
-            PTR     Relocated : 1,	// relocations are resolved
+            PTR32   Relocated : 1,	// relocations are resolved
                     Imported  : 1,	// imports are resolved
                     Protected : 1,	// image has proper protection
                     Attached  : 1;	// points to an externally allocated image
@@ -149,14 +130,10 @@
                   *Flink;
         } RESOURCE_LIST;
         
-        typedef struct _RAW_PE {
+        typedef struct _RAW_PE64 {
             DOS_HEADER		  *pDosHdr;
             DOS_STUB 		  *pDosStub;
-#if SUPPORT_PE32PLUS
             NT_HEADERS64      *pNtHdr;
-#else
-            NT_HEADERS32      *pNtHdr;
-#endif
             SECTION_HEADER   **ppSecHdr;		    // array pointing to section headers
             void		     **ppSectionData;       // array pointing to section data
             PE_FLAGS		   LoadStatus;
@@ -166,16 +143,16 @@
             IMPORT_LIBRARY    *pImport;              // forward-linked list of imports
             EXPORT_LIST       *pExport;              // forward-linked list of exports
             RESOURCE_LIST     *pResource;              // forward-linked list of resources
-        } RAW_PE;	// wraps PE file
+        } RAW_PE64;	// wraps PE file
 
 
         typedef struct _VIRTUAL_PE_MODULE32 {
-            RAW_PE      PE;
+            RAW_PE64      PE;
             void	   *Flink,
                        *Blink;
             char		cName[8];	// identification of loaded DLLS, not sz
             void*		pBaseAddr;	// if headers aren't loaded
-        } VIRTUAL_MODULE;	// wrapper to represent aligned PE
+        } VIRTUAL_MODULE64;	// wrapper to represent aligned PE
         
         typedef struct {
            uint16_t Offset	: 12,
@@ -186,9 +163,6 @@
 
 #pragma region Prototypes
 #   pragma region Peel
-        PTR LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment);
-        PTR LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment);
-    
         PTR64 LIBCALL PlAlignUp64(IN const PTR64 offset, IN const PTR64 alignment);
         PTR64 LIBCALL PlAlignDown64(IN const PTR64 offset, IN const PTR64 alignment);
 
@@ -196,67 +170,67 @@
         DWORD LIBCALL PlPageToSectionProtection(IN const DWORD dwProtection);
 #   pragma endregion
 #   pragma region Raw
-// these can operate on any filled RAW_PE regardless of alignment
-        LOGICAL LIBCALL PlRvaToPa(IN const RAW_PE* rpe, IN const PTR Rva, OUT PTR* Pa);
-        LOGICAL LIBCALL PlPaToRva(IN const RAW_PE* rpe, IN const PTR Pa, OUT PTR* Rva);
+// these can operate on any filled RAW_PE64 regardless of alignment
+        LOGICAL LIBCALL PlRvaToPa64(IN const RAW_PE64* rpe, IN const PTR Rva, OUT PTR* Pa);
+        LOGICAL LIBCALL PlPaToRva64(IN const RAW_PE64* rpe, IN const PTR Pa, OUT PTR* Rva);
 
-        LOGICAL LIBCALL PlGetRvaPtr(IN const RAW_PE* rpe, IN const PTR Rva, OUT PTR* Ptr);
-        LOGICAL LIBCALL PlGetPaPtr(IN const RAW_PE* rpe, IN const PTR Pa, OUT PTR* Ptr);
+        LOGICAL LIBCALL PlGetRvaPtr64(IN const RAW_PE64* rpe, IN const PTR Rva, OUT PTR* Ptr);
+        LOGICAL LIBCALL PlGetPaPtr64(IN const RAW_PE64* rpe, IN const PTR Pa, OUT PTR* Ptr);
 
-        LOGICAL LIBCALL PlWriteRva(INOUT RAW_PE* rpe, IN const PTR Rva, IN const void* pData, IN size_t cbData);
-        LOGICAL LIBCALL PlReadRva(IN const RAW_PE* rpe, IN const PTR Rva, IN void* pBuffer, IN size_t cbBufferMax);
-        LOGICAL LIBCALL PlWritePa(INOUT RAW_PE* rpe, IN const PTR Pa, IN const void* pData, IN size_t cbData);
-        LOGICAL LIBCALL PlReadPa(IN const RAW_PE* rpe, IN const PTR Pa, IN void* pBuffer, IN size_t cbBufferMax);
+        LOGICAL LIBCALL PlWriteRva64(INOUT RAW_PE64* rpe, IN const PTR Rva, IN const void* pData, IN size_t cbData);
+        LOGICAL LIBCALL PlReadRva64(IN const RAW_PE64* rpe, IN const PTR Rva, IN void* pBuffer, IN size_t cbBufferMax);
+        LOGICAL LIBCALL PlWritePa64(INOUT RAW_PE64* rpe, IN const PTR Pa, IN const void* pData, IN size_t cbData);
+        LOGICAL LIBCALL PlReadPa64(IN const RAW_PE64* rpe, IN const PTR Pa, IN void* pBuffer, IN size_t cbBufferMax);
 
-        LOGICAL LIBCALL PlRvaToVa(IN const VIRTUAL_MODULE* vm, IN const PTR Rva, OUT PTR* Va);
-        LOGICAL LIBCALL PlPaToVa(IN const VIRTUAL_MODULE* vm, IN const PTR Pa, OUT PTR* Va);
+        LOGICAL LIBCALL PlRvaToVa64(IN const VIRTUAL_MODULE64* vm, IN const PTR Rva, OUT PTR* Va);
+        LOGICAL LIBCALL PlPaToVa64(IN const VIRTUAL_MODULE64* vm, IN const PTR Pa, OUT PTR* Va);
 
-        LOGICAL LIBCALL PlMaxPa(IN const RAW_PE* rpe, OUT PTR* MaxPa);
-        LOGICAL LIBCALL PlMaxRva(IN const RAW_PE* rpe, OUT PTR* MaxRva);
+        LOGICAL LIBCALL PlMaxPa64(IN const RAW_PE64* rpe, OUT PTR* MaxPa);
+        LOGICAL LIBCALL PlMaxRva64(IN const RAW_PE64* rpe, OUT PTR* MaxRva);
     
-        LOGICAL LIBCALL PlEnumerateImports(INOUT RAW_PE* rpe);
-        LOGICAL LIBCALL PlFreeEnumeratedImports(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlEnumerateImports64(INOUT RAW_PE64* rpe);
+        LOGICAL LIBCALL PlFreeEnumeratedImports64(INOUT RAW_PE64* rpe);
 
-        LOGICAL LIBCALL PlEnumerateExports(INOUT RAW_PE* rpe);
-        LOGICAL LIBCALL PlFreeEnumeratedExports(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlEnumerateExports64(INOUT RAW_PE64* rpe);
+        LOGICAL LIBCALL PlFreeEnumeratedExports64(INOUT RAW_PE64* rpe);
 
-        LOGICAL LIBCALL PlRelocate(INOUT RAW_PE* rpe, IN const PTR dwOldBase, IN const PTR dwNewBase);
+        LOGICAL LIBCALL PlRelocate64(INOUT RAW_PE64* rpe, IN const PTR dwOldBase, IN const PTR dwNewBase);
     
-        LOGICAL LIBCALL PlCalculateChecksum(INOUT RAW_PE* rpe, OUT DWORD* dwChecksum);
+        LOGICAL LIBCALL PlCalculateChecksum64(INOUT RAW_PE64* rpe, OUT DWORD* dwChecksum);
 
-        LOGICAL LIBCALL PlSizeofPeHeaders(IN const RAW_PE* rpe, OUT PTR* SizeofHeaders);
+        LOGICAL LIBCALL PlSizeofPeHeaders64(IN const RAW_PE64* rpe, OUT PTR* SizeofHeaders);
 #   pragma endregion
 #   pragma region File
 // these will only work on file aligned PEs
-        LOGICAL LIBCALL PlAttachFile(IN const void* const pFileBase, OUT RAW_PE* rpe);
-        LOGICAL LIBCALL PlDetachFile(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlAttachFile64(IN const void* const pFileBase, OUT RAW_PE64* rpe);
+        LOGICAL LIBCALL PlDetachFile64(INOUT RAW_PE64* rpe);
 
-        LOGICAL LIBCALL PlFileToImage(IN const RAW_PE* rpe, OUT VIRTUAL_MODULE* vm);
-        LOGICAL LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlFileToImage64(IN const RAW_PE64* rpe, OUT VIRTUAL_MODULE64* vm);
+        LOGICAL LIBCALL PlFileToImageEx64(IN const RAW_PE64* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE64* vm);
 
-        LOGICAL LIBCALL PlCopyFile(IN const RAW_PE* rpe, OUT RAW_PE* crpe);
-        LOGICAL LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe);
+        LOGICAL LIBCALL PlCopyFile64(IN const RAW_PE64* rpe, OUT RAW_PE64* crpe);
+        LOGICAL LIBCALL PlCopyFileEx64(IN const RAW_PE64* rpe, IN const void* pBuffer, OUT RAW_PE64* crpe);
 
-        LOGICAL LIBCALL PlFreeFile(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlFreeFile64(INOUT RAW_PE64* rpe);
 
-        LOGICAL LIBCALL PlReleaseImage(INOUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlReleaseImage64(INOUT VIRTUAL_MODULE64* vm);
 #   pragma endregion
 #   pragma region Virtual
 // these will only work on image aligned PEs
-        LOGICAL LIBCALL PlAttachImage(IN const void* const pModuleBase, OUT VIRTUAL_MODULE* vm);
-        LOGICAL LIBCALL PlDetachImage(INOUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlAttachImage64(IN const void* const pModuleBase, OUT VIRTUAL_MODULE64* vm);
+        LOGICAL LIBCALL PlDetachImage64(INOUT VIRTUAL_MODULE64* vm);
 
-        LOGICAL LIBCALL PlImageToFile(IN const VIRTUAL_MODULE* vm, OUT RAW_PE* rpe);
-        LOGICAL LIBCALL PlImageToFileEx(IN const VIRTUAL_MODULE* vm, IN const void* pBuffer, OUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlImageToFile64(IN const VIRTUAL_MODULE64* vm, OUT RAW_PE64* rpe);
+        LOGICAL LIBCALL PlImageToFileEx64(IN const VIRTUAL_MODULE64* vm, IN const void* pBuffer, OUT RAW_PE64* rpe);
 
-        LOGICAL LIBCALL PlCopyImage(IN VIRTUAL_MODULE* vm, OUT VIRTUAL_MODULE* cvm);
-        LOGICAL LIBCALL PlCopyImageEx(IN VIRTUAL_MODULE* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE* cvm);
+        LOGICAL LIBCALL PlCopyImage64(IN VIRTUAL_MODULE64* vm, OUT VIRTUAL_MODULE64* cvm);
+        LOGICAL LIBCALL PlCopyImageEx64(IN VIRTUAL_MODULE64* vm, IN const void* pBuffer, OUT VIRTUAL_MODULE64* cvm);
 
-        LOGICAL LIBCALL PlProtectImage(INOUT VIRTUAL_MODULE* vm);
-        LOGICAL LIBCALL PlUnprotectImage(INOUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlProtectImage64(INOUT VIRTUAL_MODULE64* vm);
+        LOGICAL LIBCALL PlUnprotectImage64(INOUT VIRTUAL_MODULE64* vm);
 
-        LOGICAL LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm);
+        LOGICAL LIBCALL PlFreeImage64(INOUT VIRTUAL_MODULE64* vm);
 
-        LOGICAL LIBCALL PlReleaseFile(INOUT RAW_PE* rpe);
+        LOGICAL LIBCALL PlReleaseFile64(INOUT RAW_PE64* rpe);
 #   pragma endregion
 #pragma endregion
