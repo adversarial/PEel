@@ -361,7 +361,7 @@ LOGICAL EXPORT LIBCALL PlEnumerateImports(INOUT RAW_PE* rpe) {
         pImport->iiImportList = pII;
         for (; tdIat->u1.Function; ++tdIat) {
             if (tdIat->u1.Ordinal & IMAGE_ORDINAL_FLAG)
-                pII->Ordinal = (char*)tdIat->u1.Ordinal;
+                pII->Ordinal = (char*)LOWORD(tdIat->u1.Ordinal);
             else {
                 inName = (IMPORT_NAME*)tdIat->u1.AddressOfData;
                 if (!LOGICAL_SUCCESS(PlGetRvaPtr(rpe, (PTR)inName, (PTR*)&inName)))
