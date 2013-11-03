@@ -86,11 +86,11 @@ PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment) {
 DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics) {
     DWORD dwProtect = dwCharacteristics;
     
-    if (dwProtect & IMAGE_SCN_CNT_CODE)
-        dwProtect |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE;
-    if (dwProtect & IMAGE_SCN_CNT_INITIALIZED_DATA
-     || dwProtect & IMAGE_SCN_CNT_UNINITIALIZED_DATA)
-     dwProtect |= IMAGE_SCN_MEM_READ;
+    //if (dwProtect & IMAGE_SCN_CNT_CODE)
+    //    dwProtect |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE;
+    //if (dwProtect & IMAGE_SCN_CNT_INITIALIZED_DATA
+    // || dwProtect & IMAGE_SCN_CNT_UNINITIALIZED_DATA)
+    // dwProtect |= IMAGE_SCN_MEM_READ;
     // 1st bit is mem_shared, ignore it, #idgaf about r0
     dwProtect = (dwProtect >> (3 * CHAR_BIT + 5)) & 0xff;
     switch (dwProtect) {
