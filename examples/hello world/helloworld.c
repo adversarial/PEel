@@ -51,8 +51,7 @@ int main(int argc, char* argv[]) {
     PlEnumerateImports(&vm.PE);
     for (IMPORT_LIBRARY* pIL = vm.PE.pImport; pIL != NULL; pIL = (IMPORT_LIBRARY*)pIL->Flink) {
         printf("\nLoading library %s", pIL->Library);
-        if (GetModuleHandleA(pIL->Library) == NULL) 
-            LoadLibraryA(pIL->Library);
+        HMODULE hLib = LoadLibraryA(pIL->Library);
         for (IMPORT_ITEM* pII = pIL->iiImportList; pII != NULL; pII = (IMPORT_ITEM*)pII->Flink) {
             if (pII->Name == NULL && pII->Ordinal == NULL)
                 break;
@@ -60,7 +59,7 @@ int main(int argc, char* argv[]) {
                 printf("\n\tImporting %s", pII->Name);
             else
                 printf("\n\tImporting ordinal %p", pII->Ordinal);
-            *pII->dwItemPtr = (PTR)GetProcAddress(GetModuleHandleA(pIL->Library), pII->Name != NULL ? pII->Name : pII->Ordinal);
+            *pII->dwItemPtr = (PTR)GetProcAddress(hLib, pII->Name != NULL ? pII->Name : pII->Ordinal);
         }
     }
     // 3. Protect
