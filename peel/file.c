@@ -52,10 +52,10 @@ LOGICAL EXPORT LIBCALL PlAttachFile(IN const void* const pFileBase, OUT RAW_PE* 
         if (rpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
             dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, rpe->pNtHdr->FileHeader.NumberOfSections);
 
-        rpe->ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
+        rpe->ppSecHdr = malloc(wNumSections * sizeof(*rpe->ppSecHdr));
         if (rpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        rpe->ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
+        rpe->ppSectionData = malloc(wNumSections * sizeof(*rpe->ppSectionData));
         if (rpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
         for (register size_t i = 0; i < wNumSections; ++i) {
@@ -89,7 +89,8 @@ LOGICAL EXPORT LIBCALL PlDetachFile(INOUT RAW_PE* rpe) {
     if (rpe->ppSectionData != NULL)
         free(rpe->ppSectionData);
     dmsg(TEXT("\nDetached from PE file at 0x%p"), rpe->pDosHdr);
-    memset(rpe, 0, sizeof(RAW_PE));
+    memset(rpe, 0, sizeof(*rpe));
+
     return LOGICAL_TRUE;
 }
 
@@ -112,7 +113,7 @@ LOGICAL EXPORT LIBCALL PlFileToImage(IN const RAW_PE* rpe, OUT VIRTUAL_MODULE* v
     pImage = VirtualAlloc(NULL, MaxRva, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pImage == NULL)
         return LOGICAL_MAYBE;
-    return PlFileToImageEx(rpe, (void*)pImage, vm);
+    return PlFileToImageEx(rpe, pImage, vm);
 }
 
 /// <summary>
@@ -137,7 +138,7 @@ LOGICAL EXPORT LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuf
 
     vm->pBaseAddr = (void*)pBuffer;
     vm->PE.pDosHdr = (DOS_HEADER*)vm->pBaseAddr;
-    memmove(vm->PE.pDosHdr, rpe->pDosHdr, sizeof(DOS_HEADER));
+    memmove(vm->PE.pDosHdr, rpe->pDosHdr, sizeof(*rpe->pDosHdr));
     vm->PE.pDosStub = (DOS_STUB*)((PTR)vm->pBaseAddr + sizeof(DOS_HEADER));
     memmove(vm->PE.pDosStub, rpe->pDosStub, rpe->pDosHdr->e_lfanew - sizeof(DOS_HEADER));
     vm->PE.pNtHdr = (NT_HEADERS*)((PTR)vm->pBaseAddr + vm->PE.pDosHdr->e_lfanew);
@@ -147,10 +148,10 @@ LOGICAL EXPORT LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuf
         if (vm->PE.pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
             dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, vm->PE.pNtHdr->FileHeader.NumberOfSections);
 
-        vm->PE.ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
+        vm->PE.ppSecHdr = malloc(wNumSections * sizeof(*vm->PE.ppSecHdr));
         if (vm->PE.ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        vm->PE.ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
+        vm->PE.ppSectionData = malloc(wNumSections * sizeof(*vm->PE.ppSectionData));
         if (vm->PE.ppSectionData == NULL)
             return LOGICAL_MAYBE;
         for (register size_t i = 0; i < wNumSections; ++i) {
@@ -163,7 +164,7 @@ LOGICAL EXPORT LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuf
         vm->PE.ppSecHdr = NULL;
         vm->PE.ppSectionData = NULL;
     }
-    memset(&vm->PE.LoadStatus, 0, sizeof(PE_FLAGS));
+    memset(&vm->PE.LoadStatus, 0, sizeof(vm->PE.LoadStatus));
     vm->PE.LoadStatus = rpe->LoadStatus;
     vm->PE.LoadStatus.Attached = FALSE;
     return LOGICAL_TRUE;
@@ -188,7 +189,7 @@ LOGICAL EXPORT LIBCALL PlCopyFile(IN const RAW_PE* rpe, OUT RAW_PE* crpe) {
     pCopy = VirtualAlloc(NULL, MaxPa, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
     if (pCopy == NULL)
         return LOGICAL_MAYBE;
-    return PlCopyFileEx(rpe, (void*)pCopy, crpe);
+    return PlCopyFileEx(rpe, pCopy, crpe);
 }
 
 /// <summary>
@@ -203,13 +204,13 @@ LOGICAL EXPORT LIBCALL PlCopyFile(IN const RAW_PE* rpe, OUT RAW_PE* crpe) {
 ///
 /// <returns>
 /// LOGICAL_TRUE on success, LOGICAL_FALSE on PE related error, LOGICAL_MAYBE on CRT/memory error </returns>
-LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe) {
+LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN void* pBuffer, OUT RAW_PE* crpe) {
     PTR MaxPa = 0;
 
     // unnecessary per standard, but let's play nice with gaps
     if (!LOGICAL_SUCCESS(PlMaxPa(rpe, &MaxPa)))
         return LOGICAL_FALSE;
-    memset((void*)pBuffer, 0, MaxPa);
+    memset(pBuffer, 0, MaxPa);
 
     crpe->pDosHdr = (DOS_HEADER*)pBuffer;
     memmove(crpe->pDosHdr, rpe->pDosHdr, sizeof(DOS_HEADER));
@@ -222,10 +223,10 @@ LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer
         if (crpe->pNtHdr->FileHeader.NumberOfSections > MAX_SECTIONS) 
             dmsg(TEXT("\nToo many sections to load, only loading %hu of %hu sections!"), MAX_SECTIONS, crpe->pNtHdr->FileHeader.NumberOfSections);
 
-        crpe->ppSecHdr = (SECTION_HEADER**)malloc(wNumSections * sizeof(SECTION_HEADER*));
+        crpe->ppSecHdr = malloc(wNumSections * sizeof(*crpe->ppSecHdr));
         if (crpe->ppSecHdr == NULL)
             return LOGICAL_MAYBE;
-        crpe->ppSectionData = (void**)malloc(wNumSections * sizeof(void*));
+        crpe->ppSectionData = malloc(wNumSections * sizeof(*crpe->ppSectionData));
         if (crpe->ppSectionData == NULL)
             return LOGICAL_MAYBE;
         for (register size_t i = 0; i < wNumSections; ++i) {
@@ -238,7 +239,7 @@ LOGICAL EXPORT LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer
         crpe->ppSecHdr = NULL;
         crpe->ppSectionData = NULL;
     }
-    memset(&crpe->LoadStatus, 0, sizeof(PE_FLAGS));
+    memset(&crpe->LoadStatus, 0, sizeof(crpe->LoadStatus));
     crpe->LoadStatus = rpe->LoadStatus;
     crpe->LoadStatus.Attached = FALSE;
     return LOGICAL_TRUE;
@@ -261,7 +262,7 @@ LOGICAL EXPORT LIBCALL PlFreeFile(INOUT RAW_PE* rpe) {
     if (rpe->ppSectionData != NULL)
         free(rpe->ppSectionData);
     VirtualFree(rpe->pDosHdr, 0, MEM_RELEASE);
-    memset(rpe, 0, sizeof(RAW_PE));
+    memset(rpe, 0, sizeof(*rpe));
     return LOGICAL_TRUE;
 }
 

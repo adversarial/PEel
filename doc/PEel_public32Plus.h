@@ -209,7 +209,7 @@
         LOGICAL LIBCALL PlFileToImageEx64(IN const RAW_PE64* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE64* vm);
 
         LOGICAL LIBCALL PlCopyFile64(IN const RAW_PE64* rpe, OUT RAW_PE64* crpe);
-        LOGICAL LIBCALL PlCopyFileEx64(IN const RAW_PE64* rpe, IN const void* pBuffer, OUT RAW_PE64* crpe);
+        LOGICAL LIBCALL PlCopyFileEx64(IN const RAW_PE64* rpe, IN void* pBuffer, OUT RAW_PE64* crpe);
 
         LOGICAL LIBCALL PlFreeFile64(INOUT RAW_PE64* rpe);
 
