@@ -341,7 +341,7 @@ LOGICAL EXPORT LIBCALL PlEnumerateImports(INOUT RAW_PE* rpe) {
     if (!rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size
      && !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress)
         return LOGICAL_TRUE;
-    rpe->pImport = (IMPORT_LIBRARY*)calloc(1, sizeof(IMPORT_LIBRARY));
+    rpe->pImport = calloc(1, sizeof(*rpe->pImport));
     if (rpe->pImport == NULL)
         return LOGICAL_MAYBE;
     pImport = rpe->pImport;
@@ -355,7 +355,7 @@ LOGICAL EXPORT LIBCALL PlEnumerateImports(INOUT RAW_PE* rpe) {
         tdIat = (THUNK_DATA*)iidDesc->FirstThunk;
         if (!LOGICAL_SUCCESS(PlGetRvaPtr(rpe, (PTR)tdIat, (PTR*)&tdIat)))
             return LOGICAL_FALSE;
-        pII = (IMPORT_ITEM*)calloc(1, sizeof(IMPORT_ITEM));
+        pII = calloc(1, sizeof(*pII));
         if (pII == NULL)
             return LOGICAL_MAYBE;
         pImport->iiImportList = pII;
@@ -436,7 +436,7 @@ LOGICAL EXPORT LIBCALL PlEnumerateExports(INOUT RAW_PE* rpe) {
     if (!rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].Size
      && !rpe->pNtHdr->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT].VirtualAddress)
         return LOGICAL_TRUE;
-    rpe->pExport = (EXPORT_LIST*)calloc(1, sizeof(EXPORT_LIST));
+    rpe->pExport = calloc(1, sizeof(*rpe->pExport));
     if (rpe->pExport == NULL)
         return LOGICAL_MAYBE;
     pExport = rpe->pExport;

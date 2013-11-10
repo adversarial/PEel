@@ -235,7 +235,7 @@
         LOGICAL LIBCALL PlFileToImageEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE* vm);
 
         LOGICAL LIBCALL PlCopyFile(IN const RAW_PE* rpe, OUT RAW_PE* crpe);
-        LOGICAL LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN const void* pBuffer, OUT RAW_PE* crpe);
+        LOGICAL LIBCALL PlCopyFileEx(IN const RAW_PE* rpe, IN void* pBuffer, OUT RAW_PE* crpe);
 
         LOGICAL LIBCALL PlFreeFile(INOUT RAW_PE* rpe);
 

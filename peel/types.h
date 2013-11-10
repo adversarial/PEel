@@ -21,6 +21,7 @@
  */
 
 #include <stdint.h>
+#include <limits.h>
 #include <Windows.h>
 
 #pragma region Basic Types

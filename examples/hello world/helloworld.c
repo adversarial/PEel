@@ -20,12 +20,13 @@
  * THE SOFTWARE.
  */
 
-#include "..\..\doc\PEel_public.h"
-
 #include "..\test\test.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+
+#include "..\..\doc\PEel_public.h"
+#pragma comment (lib, "..\\..\\Release\\PEel32.lib")
 
 int main(int argc, char* argv[]) {
     VIRTUAL_MODULE vm = {0};
@@ -45,7 +46,7 @@ int main(int argc, char* argv[]) {
     // 1. Relocate (we know our image has a .reloc section)
     if ((void*)vm.PE.pNtHdr->OptionalHeader.ImageBase != vm.pBaseAddr) {
         PlRelocate(&vm.PE, vm.PE.pNtHdr->OptionalHeader.ImageBase, (PTR)vm.pBaseAddr);
-        printf("\nPE typically at %p was relocated to %p", vm.PE.pNtHdr->OptionalHeader.ImageBase, vm.pBaseAddr);
+        printf("\nPE typically at %p was relocated to %p", (void*)vm.PE.pNtHdr->OptionalHeader.ImageBase, vm.pBaseAddr);
     }
     // 2. Import (yeah i know this is a terrible way, but I'm lazy and this is only an example)
     PlEnumerateImports(&vm.PE);
@@ -71,7 +72,7 @@ int main(int argc, char* argv[]) {
         typedef void (*EntryPtr)();
         EntryPtr E = (EntryPtr)dwEntryPoint;
         if (dwEntryPoint) {
-            printf("\nCalling entry point at %p", dwEntryPoint);
+            printf("\nCalling entry point at %p", (void*)dwEntryPoint);
             E();
         } else
             printf("\nImage does not have an entry point...");

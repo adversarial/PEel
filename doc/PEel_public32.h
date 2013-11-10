@@ -209,7 +209,7 @@
         LOGICAL LIBCALL PlFileToImageEx32(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT VIRTUAL_MODULE32* vm);
 
         LOGICAL LIBCALL PlCopyFile32(IN const RAW_PE32* rpe, OUT RAW_PE32* crpe);
-        LOGICAL LIBCALL PlCopyFileEx32(IN const RAW_PE32* rpe, IN const void* pBuffer, OUT RAW_PE32* crpe);
+        LOGICAL LIBCALL PlCopyFileEx32(IN const RAW_PE32* rpe, IN void* pBuffer, OUT RAW_PE32* crpe);
 
         LOGICAL LIBCALL PlFreeFile32(INOUT RAW_PE32* rpe);
 
