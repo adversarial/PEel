@@ -56,7 +56,7 @@
 PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
-    return (offset + alignment - 1) & -(alignment);
+    return (offset + alignment - 1) & (-alignment);
 }
 
 /// <summary>
@@ -72,7 +72,7 @@ PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment) {
 PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
-    return (offset & -(alignment));
+    return (offset & (-alignment));
 }
 
 /// <summary>
@@ -103,11 +103,11 @@ DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics)
         case 3: // execute read
             dwProtect = PAGE_EXECUTE_READ;
             break;
-        case 4: // write (???)
+        case 4: // write (?)
         case 6: // read write
             dwProtect = PAGE_READWRITE;
             break;
-        case 5: // execute write (???)
+        case 5: // execute write (?)
         case 7: // all access
             dwProtect = PAGE_EXECUTE_READWRITE;
         default:
