@@ -36,7 +36,7 @@
 LOGICAL EXPORT LIBCALL PlAttachImage(IN const void* const pModuleBase, OUT VIRTUAL_MODULE* vm) {
     
     // leave other members alone (name needs to be set externally)
-    memset(&vm->PE, 0, sizeof(RAW_PE));
+    memset(&vm->PE, 0, sizeof(vm->PE));
 
     vm->pBaseAddr = (void*)pModuleBase;
     vm->PE.pDosHdr = (DOS_HEADER*)pModuleBase;
@@ -101,7 +101,7 @@ LOGICAL EXPORT LIBCALL PlDetachImage(INOUT VIRTUAL_MODULE* vm) {
     if (vmNext != NULL)
         vmNext->Blink = vmPrev;
     dmsg(TEXT("\nDetached from PE image at 0x%p"), vm->pBaseAddr);
-    memset(vm, 0, sizeof(VIRTUAL_MODULE));
+    memset(vm, 0, sizeof(*vm));
     return LOGICAL_TRUE;
 }
 
@@ -252,7 +252,7 @@ LOGICAL EXPORT LIBCALL PlCopyImageEx(IN VIRTUAL_MODULE* vm, IN const void* pBuff
         cvm->PE.ppSecHdr = NULL;
         cvm->PE.ppSectionData = NULL;
     }
-    memset(&cvm->PE.LoadStatus, 0, sizeof(PE_FLAGS));
+    memset(&cvm->PE.LoadStatus, 0, sizeof(cvm->PE.LoadStatus));
     cvm->PE.LoadStatus = vm->PE.LoadStatus;
     cvm->PE.LoadStatus.Attached = FALSE;
     cvm->Blink = (void*)vm;
@@ -331,7 +331,7 @@ LOGICAL EXPORT LIBCALL PlFreeImage(INOUT VIRTUAL_MODULE* vm) {
         vmPrev->Flink = vmNext;
     if (vmNext != NULL)
         vmNext->Blink = vmPrev;
-    memset(vm, 0, sizeof(VIRTUAL_MODULE));
+    memset(vm, 0, sizeof(*vm));
     return LOGICAL_TRUE;
 }
 

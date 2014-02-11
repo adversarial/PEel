@@ -20,13 +20,15 @@
  * THE SOFTWARE.
  */
 
-#include "..\test\test.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "..\test\test.h"
 #include "..\..\doc\PEel_public.h"
-#pragma comment (lib, "..\\..\\Release\\PEel32.lib")
+#pragma comment (lib, "..\\..\\peel.lib")
+
+#include <Windows.h>
 
 int main(int argc, char* argv[]) {
     VIRTUAL_MODULE vm = {0};
@@ -76,8 +78,8 @@ int main(int argc, char* argv[]) {
             E();
         } else
             printf("\nImage does not have an entry point...");
-
     }
+
     printf("\nIf we reached here then our loaded file did not call exit()");
     for (IMPORT_LIBRARY* pIL = vm.PE.pImport; pIL != NULL; pIL = (IMPORT_LIBRARY*)pIL->Flink) {
         if (GetModuleHandleA(pIL->Library) != NULL) 

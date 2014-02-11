@@ -8,7 +8,7 @@ POC_PROJECT_TYPE = 3#
 POC_PROJECT_OUTPUTDIR = output#
 POC_PROJECT_RESULTDIR = .#
 POC_PROJECT_ARGUMENTS = #
-POC_PROJECT_WORKPATH = #
+POC_PROJECT_WORKPATH = .#
 POC_PROJECT_EXECUTOR = #
 CC = pocc.exe#
 AS = poasm.exe#
@@ -39,6 +39,6 @@ output\helloworld.obj: \
 	..\test\test.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
-.SILENT:
-
 .EXCLUDEDFILES:
+
+.SILENT:

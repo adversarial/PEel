@@ -56,7 +56,7 @@
 PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
-    return (offset + alignment - 1) & (-alignment);
+    return (offset + alignment - 1) & ~(alignment - 1);
 }
 
 /// <summary>
@@ -72,7 +72,7 @@ PTR32 EXPORT LIBCALL PlAlignUp(IN const PTR offset, IN const PTR alignment) {
 PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment) {
     if (!alignment)
         return offset;
-    return (offset & (-alignment));
+    return (offset & ~(alignment - 1));
 }
 
 /// <summary>
@@ -84,7 +84,6 @@ PTR32 EXPORT LIBCALL PlAlignDown(IN const PTR offset, IN const PTR alignment) {
 /// <returns>
 /// Page protection for use with VirtualProtect </returns>
 DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics) {
-    DWORD dwProtect = dwCharacteristics;
     
     //if (dwProtect & IMAGE_SCN_CNT_CODE)
     //    dwProtect |= IMAGE_SCN_MEM_READ | IMAGE_SCN_MEM_EXECUTE;
@@ -92,6 +91,26 @@ DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics)
     // || dwProtect & IMAGE_SCN_CNT_UNINITIALIZED_DATA)
     // dwProtect |= IMAGE_SCN_MEM_READ;
     // 1st bit is mem_shared, ignore it, #idgaf about r0
+
+    DWORD dwProtect = (dwCharacteristics >> (3 * CHAR_BIT + 5)) & 007;
+    if (dwProtect & 0x1)    // execute
+        dwProtect <<= 4;    // execute is in second nibble for some reason
+
+    if (dwProtect & 0xe0)   // all except execute
+        dwProtect &= ~0x10; // clear execute nibble (implicit)
+
+    if (!dwProtect)         // no protection bits set
+        dwProtect = PAGE_NOACCESS;
+
+    if (dwCharacteristics & IMAGE_SCN_MEM_NOT_CACHED)
+        dwProtect |= PAGE_NOCACHE;
+
+    return dwProtect;
+}
+
+DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics) {
+    DWORD dwProtect = dwCharacteristics;
+    
     dwProtect = (dwProtect >> (3 * CHAR_BIT + 5)) & 0xff;
     switch (dwProtect) {
         case 1: // execute
@@ -118,6 +137,7 @@ DWORD EXPORT LIBCALL PlSectionToPageProtection(IN const DWORD dwCharacteristics)
         dwProtect |= PAGE_NOCACHE;
     return dwProtect;
 }
+
 
 /// <summary>
 ///	Converts page protection constant to SECTION_HEADER::Characteristics </summary>

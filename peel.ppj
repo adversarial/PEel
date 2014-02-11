@@ -14,7 +14,7 @@ CC = pocc.exe#
 AS = poasm.exe#
 AR = polib.exe#
 CCFLAGS = -std:C99 -Tx86-coff -Os -Ox -Ob1 -fp:precise -W1 -Gr -Ze -Go #
-ASFLAGS = -AAMD64 -Gr #
+ASFLAGS = -AIA32 -Gr #
 ARFLAGS = #
 INCLUDE = $(PellesCDir)\Include\Win;$(PellesCDir)\Include#
 LIB = $(PellesCDir)\Lib\Win64;$(PellesCDir)\Lib#
@@ -38,7 +38,8 @@ output\file.obj: \
 	peel\peel.h \
 	peel\preproc.h \
 	peel\raw.h \
-	peel\types.h
+	peel\types.h \
+	peel\virtual.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -46,11 +47,7 @@ output\file.obj: \
 # 
 output\peel.obj: \
 	peel\peel.c \
-	peel\file.h \
-	peel\peel.h \
-	peel\preproc.h \
-	peel\raw.h \
-	peel\types.h
+	peel\peel.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -70,7 +67,8 @@ output\raw.obj: \
 	peel\peel.h \
 	peel\preproc.h \
 	peel\raw.h \
-	peel\types.h
+	peel\types.h \
+	peel\virtual.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
 # 
@@ -86,7 +84,7 @@ output\virtual.obj: \
 	peel\virtual.h
 	$(CC) $(CCFLAGS) "$!" -Fo"$@"
 
-.SILENT:
-
 .EXCLUDEDFILES: \
 	output\peel.res
+
+.SILENT:

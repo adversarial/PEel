@@ -4,48 +4,62 @@
 		<category name="Window">
 			<property name="Left" type="integer">0</property>
 			<property name="Top" type="integer">0</property>
-			<property name="Right" type="integer">500</property>
-			<property name="Bottom" type="integer">347</property>
+			<property name="Right" type="integer">1024</property>
+			<property name="Bottom" type="integer">396</property>
 			<property name="Maximized" type="integer">0</property>
 			<property name="Active" type="integer">0</property>
 		</category>
 	</category>
 	<category name="peel\peel.c">
 		<category name="Window">
-			<property name="Left" type="integer">25</property>
-			<property name="Top" type="integer">25</property>
-			<property name="Right" type="integer">525</property>
-			<property name="Bottom" type="integer">372</property>
-			<property name="Maximized" type="integer">0</property>
-			<property name="Active" type="integer">0</property>
+			<property name="Left" type="integer">-8</property>
+			<property name="Top" type="integer">-30</property>
+			<property name="Right" type="integer">1292</property>
+			<property name="Bottom" type="integer">536</property>
+			<property name="Maximized" type="integer">1</property>
+			<property name="Active" type="integer">1</property>
 		</category>
 	</category>
 	<category name="peel\virtual.c">
 		<category name="Window">
 			<property name="Left" type="integer">50</property>
 			<property name="Top" type="integer">50</property>
-			<property name="Right" type="integer">550</property>
-			<property name="Bottom" type="integer">397</property>
+			<property name="Right" type="integer">1074</property>
+			<property name="Bottom" type="integer">446</property>
 			<property name="Maximized" type="integer">0</property>
 			<property name="Active" type="integer">0</property>
 		</category>
 	</category>
 	<category name="peel\raw.c">
 		<category name="Window">
-			<property name="Left" type="integer">-8</property>
-			<property name="Top" type="integer">-30</property>
-			<property name="Right" type="integer">501</property>
+			<property name="Left" type="integer">75</property>
+			<property name="Top" type="integer">75</property>
+			<property name="Right" type="integer">1099</property>
 			<property name="Bottom" type="integer">471</property>
-			<property name="Maximized" type="integer">1</property>
-			<property name="Active" type="integer">1</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
 		</category>
 	</category>
-	<category name="peel\file.h">
+	<category name="peel\file.h" />
+	<category name="peel\preproc.h" />
+	<category name="peel\peel.h" />
+	<category name="peel\raw.h">
 		<category name="Window">
 			<property name="Left" type="integer">100</property>
 			<property name="Top" type="integer">100</property>
-			<property name="Right" type="integer">600</property>
-			<property name="Bottom" type="integer">447</property>
+			<property name="Right" type="integer">1124</property>
+			<property name="Bottom" type="integer">496</property>
+			<property name="Maximized" type="integer">0</property>
+			<property name="Active" type="integer">0</property>
+		</category>
+	</category>
+	<category name="peel\types.h" />
+	<category name="peel\virtual.h">
+		<category name="Window">
+			<property name="Left" type="integer">125</property>
+			<property name="Top" type="integer">125</property>
+			<property name="Right" type="integer">1149</property>
+			<property name="Bottom" type="integer">521</property>
 			<property name="Maximized" type="integer">0</property>
 			<property name="Active" type="integer">0</property>
 		</category>
